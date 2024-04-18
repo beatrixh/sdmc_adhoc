@@ -11,19 +11,26 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
     """
     INPUTS
      - PROTOCOLS: list of PROTOCOLS (numeric) from one network
-     - NETWORK: string ("HVTN" or "COVPN") corresponding to above PROTOCOLS
+     - NETWORK: string ("HVTN" or "CoVPN") corresponding to above PROTOCOLS
     """
     if NETWORK=="HVTN":
-        ldms = pd.read_csv(constants.LDMS_PATH_HVTN, usecols=constants.STANDARD_COLS)
-    elif NETWORK=="COVPN":
-        ldms = pd.read_csv(constants.LDMS_PATH_COVPN, usecols=constants.STANDARD_COLS)
+        ldms = pd.read_csv(constants.LDMS_PATH_HVTN,
+                           usecols=constants.STANDARD_COLS,
+                           dtype=dtype_map
+                           )
+    elif NETWORK=="CoVPN":
+        ldms = pd.read_csv(constants.LDMS_PATH_COVPN,
+                           usecols=constants.STANDARD_COLS,
+                           dtype=dtype_map
+                           )
     else:
         print(f"{NETWORK} IS AN INVALID NETWORK SELECTION\n")
     ldms = ldms.loc[ldms.lstudy.isin(PROTOCOLS)]
     timestamp = datetime.date.today().strftime("%Y%m%d")
 
+    network_path = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/"
     for protocol in PROTOCOLS:
-        protocol_path = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{NETWORK}{int(protocol)}"
+        protocol_path = network_path + PROTOCOL_DIRNAME_MAP[NETWORK][int(protocol)]
         if not os.path.exists(protocol_path):
             print(f"creating protocol dir for {int(protocol)}\n")
             os.mkdir(protocol_path)
@@ -47,10 +54,10 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
 def delete_old_ldms(PROTOCOL, NETWORK):
     PROTOCOL = int(PROTOCOL)
     N = 9 + len(str(PROTOCOL))
-    feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{NETWORK}{PROTOCOL}/specimens/ldms_feed/"
+    feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{PROTOCOL_DIRNAME_MAP[NETWORK][int(PROTOCOL)]}/specimens/ldms_feed/"
     things_in_dir = os.listdir(feed_dir)
     # sort from oldest to most recent, and only take the ones that look like hvtn.ldmsPROTOCOL
-    applicable_things_in_dir = np.sort([i for i in things_in_dir if i[:N] == f'hvtn.ldms{PROTOCOL}'])
+    applicable_things_in_dir = np.sort([i for i in things_in_dir if i[:N] == f'{NETWORK.lower()}.ldms{PROTOCOL}'])
 
     # delete all but the two most recent
     for file in applicable_things_in_dir[:-2]:
@@ -66,27 +73,30 @@ def get_breakout_ldms_filepaths(PROTOCOL, NETWORK):
         yesterday = datetime.date.today() - datetime.timedelta(days = 1)
     prev_timestamp = yesterday.strftime("%Y%m%d")
 
-    feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{NETWORK}{PROTOCOL}/specimens/ldms_feed/"
+    feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{PROTOCOL_DIRNAME_MAP[NETWORK][int(PROTOCOL)]}/specimens/ldms_feed/"
     fname = f"{NETWORK.lower()}.ldms{PROTOCOL}.{timestamp}.csv"
     prev_fname = f"{NETWORK.lower()}.ldms{PROTOCOL}.{prev_timestamp}.csv"
 
     if os.path.exists(feed_dir + prev_fname):
-        old = pd.read_csv(feed_dir + prev_fname)
+        old = pd.read_csv(feed_dir + prev_fname, dtype=dtype_map)
     else:
         print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} YESTERDAY\n")
-        old = None
+        old = pd.DataFrame()
     if os.path.exists(feed_dir + fname):
-        new = pd.read_csv(feed_dir + fname)
+        new = pd.read_csv(feed_dir + fname, dtype=dtype_map)
     else:
         print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} TODAY\n")
-        new = None
+        new = pd.DataFrame()
     return old, new
 
 def report_outputs_corresponding_to_guspecs(GUSPECS):
     AFFECTED_OUTPUTS = set()
     for guspec in GUSPECS:
-        for output in GUSPEC_TO_OUTPUT_PATH[guspec]:
-            AFFECTED_OUTPUTS.add(output)
+        try:
+            for output in GUSPEC_TO_OUTPUT_PATH[guspec]:
+                AFFECTED_OUTPUTS.add(output)
+        except:
+            print(f"{guspec} not in any results we're monitoring\n")
     if len(AFFECTED_OUTPUTS) > 0:
         print(f"AFFECTED OUTPUTS: {list(AFFECTED_OUTPUTS)}\n")
     else:
@@ -100,20 +110,24 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
         - network (HVTN or COVPN) associated with protocol
     FUNCTION: determines if yesterday / todays ldms has updates in any of the columns we're interested in
     """
+    print(f"{NETWORK}{PROTOCOL}: reading in data")
     old, new = get_breakout_ldms_filepaths(PROTOCOL, NETWORK)
 
     # if either of these are empty, we have nothing to compare.
-    if not old or not new:
+    if old.empty or new.empty:
         return
 
+    print(f"{NETWORK}{PROTOCOL}: finding col diff")
     COL_DIFF = set(old.columns).symmetric_difference(new.columns)
     if len(COL_DIFF) > 0:
         print(f"COLUMNS DON'T MATCH. THE FOLLOWING NOT SHARED: {COL_DIFF}\n")
 
+    print(f"{NETWORK}{PROTOCOL}: checking if lengths match")
     if len(old) != len(new):
         print(f"YESTERDAY AND TODAY DIFFERENT LENGTHS FOR {NETWORK} {PROTOCOL}; ATTEMPTING TO DE-DUP\n")
         old = old.drop_duplicates(ignore_index=True)
         new = new.drop_duplicates(ignore_index=True)
+        print(f"{NETWORK}{PROTOCOL}: checking if lengths still don't match")
         if len(old) != len(new): # if lengths still dont match with deduping
             new_guspec_count = new.guspec.value_counts().to_frame()
             old_guspec_count = old.guspec.value_counts().to_frame()
@@ -124,14 +138,18 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
                 right_index=True
             )
             DROPPED_GUSPECS = list(comp.loc[comp.count_x!=comp.count_y].index)
+            print(f"{NETWORK}{PROTOCOL}: reporting on guspec diff:")
             if len(new) > len(old):
-                print(f"ROWS CORRESPONDING TO THE FOLLOWING GUSPECS MISSING FROM OLD: {DROPPED_GUSPECS}\n")
+                print(f"THE FOLLOWING GUSPECS WERE ADDED TODAY: {DROPPED_GUSPECS}\n")
+                report_outputs_corresponding_to_guspecs(DROPPED_GUSPECS)
                 # TODO: LIST OUT STUDIES FROM THE APPLICABLE NETWORK/PROTOCOL
             if len(old) > len(new):
                 print(f"THE FOLLOWING GUSPECS MISSING FROM NEW: {DROPPED_GUSPECS}\n")
                 report_outputs_corresponding_to_guspecs(DROPPED_GUSPECS)
     # if columns and rows match, ensure sorting is the same
+    print(f"{NETWORK}{PROTOCOL}: checking if lengths now match:")
     if len(old) == len(new):
+            print(f"{NETWORK}{PROTOCOL}: sorting dataframes")
             old = old.sort_values(
                 by=['guspec','txtpid', 'drawdm', 'drawdd', 'drawdy', 'vidval',
                 'lstudy', 'primstr', 'addstr', 'dervstr'],
@@ -143,10 +161,11 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
                 ignore_index=True
             )
 
+            print(f"{NETWORK}{PROTOCOL}: storing dataframe diff")
             # catch any rows that have mismatch
             diff = new.compare(old)
             if len(diff)>0:
-                print(f"CHANGES DETECTED\n")
+                print(f"CHANGES DETECTED IN EXISTING GUSPECS\n")
                 AFFECTED_GUSPECS = list(new.iloc[diff.index].guspec.unique())
                 print(f"AFFECTED GUSPECS: {AFFECTED_GUSPECS}\n")
                 report_outputs_corresponding_to_guspecs(AFFECTED_GUSPECS)

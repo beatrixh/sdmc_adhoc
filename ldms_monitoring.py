@@ -13,25 +13,25 @@ COVPN_PROTOCOLS = list(NETWORK_PROTOCOLS.loc[NETWORK_PROTOCOLS.network=="CoVPN"]
 # get timestamp that LDMS most recently updated
 LAST_TOUCHED = os.stat(constants.LDMS_PATH_HVTN).st_mtime
 LAST_TOUCHED = datetime.datetime.fromtimestamp(LAST_TOUCHED)
-
+#TODO: condition on COVPN LAST TOUCHED
 # if LDMS has been updated today
 if LAST_TOUCHED.date() == datetime.date.today():
     # save new copies of ldms
     if len(HVTN_PROTOCOLS)>0:
         save_todays_ldms(HVTN_PROTOCOLS, "HVTN")
         # if there are at least two ldmss saved, delete the older ones
-        for PROTOCOL in HVTN_PROTOCOLS:
-            delete_old_ldms(PROTOCOL, "HVTN")
+        # for PROTOCOL in HVTN_PROTOCOLS:
+        #     delete_old_ldms(PROTOCOL, "HVTN")
     if len(COVPN_PROTOCOLS)>0:
-        save_todays_ldms(COVPN_PROTOCOLS, "COVPN")
+        save_todays_ldms(COVPN_PROTOCOLS, "CoVPN")
         # if there are at least two ldmss saved, delete the older ones
-        for PROTOCOL in COVPN_PROTOCOLS:
-            delete_old_ldms(PROTOCOL, "COVPN")
+        # for PROTOCOL in COVPN_PROTOCOLS:
+        #     delete_old_ldms(PROTOCOL, "CoVPN")
     # determine if there are any updates, output corresponding alerts
     for protocol in HVTN_PROTOCOLS:
         detect_ldms_diffs(int(protocol), "HVTN")
     for protocol in COVPN_PROTOCOLS:
-        detect_ldms_diffs(int(protocol), "COVPN")
+        detect_ldms_diffs(int(protocol), "CoVPN")
 elif LAST_TOUCHED.date() < datetime.date.today():
     print("LDMS HASN'T BEEN UPDATED TODAY\n")
 
