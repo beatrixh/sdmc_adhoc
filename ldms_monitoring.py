@@ -10,31 +10,28 @@ NETWORK_PROTOCOLS = NETWORK_PROTOCOLS.drop_duplicates()
 HVTN_PROTOCOLS = list(NETWORK_PROTOCOLS.loc[NETWORK_PROTOCOLS.network=="HVTN"].protocol)
 COVPN_PROTOCOLS = list(NETWORK_PROTOCOLS.loc[NETWORK_PROTOCOLS.network=="CoVPN"].protocol)
 
-# get timestamp that LDMS most recently updated
-LAST_TOUCHED = os.stat(constants.LDMS_PATH_HVTN).st_mtime
-LAST_TOUCHED = datetime.datetime.fromtimestamp(LAST_TOUCHED)
-#TODO: condition on COVPN LAST TOUCHED
-# if LDMS has been updated today
-if LAST_TOUCHED.date() == datetime.date.today():
-    # save new copies of ldms
-    if len(HVTN_PROTOCOLS)>0:
-        save_todays_ldms(HVTN_PROTOCOLS, "HVTN")
-        # if there are at least two ldmss saved, delete the older ones
-        # for PROTOCOL in HVTN_PROTOCOLS:
-        #     delete_old_ldms(PROTOCOL, "HVTN")
-    if len(COVPN_PROTOCOLS)>0:
-        save_todays_ldms(COVPN_PROTOCOLS, "CoVPN")
-        # if there are at least two ldmss saved, delete the older ones
-        # for PROTOCOL in COVPN_PROTOCOLS:
-        #     delete_old_ldms(PROTOCOL, "CoVPN")
-    # determine if there are any updates, output corresponding alerts
-    for protocol in HVTN_PROTOCOLS:
-        detect_ldms_diffs(int(protocol), "HVTN")
-    for protocol in COVPN_PROTOCOLS:
-        detect_ldms_diffs(int(protocol), "CoVPN")
-elif LAST_TOUCHED.date() < datetime.date.today():
-    print("LDMS HASN'T BEEN UPDATED TODAY\n")
+def check_for_updates(PROTOCOLS, NETWORK):
+    # get today's timestamp
+    updated = was_ldms_updated(NETWORK)
+    if updated:
+        # save new copies of ldms
+        if len(PROTOCOLS)>0:
+            # if there are at least two ldmss saved, delete the older ones
+            save_todays_ldms(PROTOCOLS, NETWORK)
+            for protocol in PROTOCOLS:
+                delete_old_ldms(protocol, NETWORK)
 
+        # determine if there are any updates, output corresponding alerts
+        for protocol in PROTOCOLS:
+            try:
+                detect_ldms_diffs(int(protocol), NETWORK)
+            except:
+                print(f"ISSUE WITH {NETWORK}{int(protocol)}; CHECK CODE")
+    else:
+        print(f"{NETWORK} LDMS HASN'T BEEN UPDATED TODAY\n")
+
+check_for_updates(HVTN_PROTOCOLS, "HVTN")
+check_for_updates(COVPN_PROTOCOLS, "CoVPN")
 
 ## ---------------------------------------------------------------------------##
 #TODO: store dictionaries so don't have to read inputs in every time

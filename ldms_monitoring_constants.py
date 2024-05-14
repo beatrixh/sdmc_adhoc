@@ -32,9 +32,10 @@ OUTPUT_REGISTRY = [
     "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/CoVPN3008_FCM08_AP59_CH_20221229E01FLO_B.txt",
     "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/summary_ds_2023-04-24.csv",
     "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN139/assays/NAb/Wistar/misc_files/HVTN139_Adenovirus_nAb_Wistar_2023-08-30.csv",
-    "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN705/assays/genotyping/misc_files/data_processing/DRAFT_HVTN705_carrington_genotyping_processed_2024-04-01.txt",
+    # "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN705/assays/genotyping/misc_files/data_processing/DRAFT_HVTN705_carrington_genotyping_processed_2024-04-01.txt",
     '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN128/assays/smc/misc_files/data_processing/DRAFT_HVTN128_PKSMC_processed_2024-04-09.txt',
     '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN128/assays/total_protein/misc_files/data_processing/DRAFT_HVTN128_total_protein_processed_2024-04-04.txt',
+    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN303/assays/BCP/misc_files/data_processing/DRAFT_HVTN303_VRC_BCP_processed_2024-04-26.txt',
 ]
 
 # DTYPES FOR LDMS ------------------------------------------------------------##
@@ -84,7 +85,7 @@ GUSPEC_PROTOCOL_PER_OUTPUT = {
     path:get_protocol_gus(output) for (path,output) in zip(OUTPUT_REGISTRY,ALL_OUTPUTS)
 }
 
-# list of corresponding guspecs ----------------------------------------------##
+# list of outputs corresponding to guspecs -----------------------------------##
 def generate_guspec_to_path_map():
     bigmap = {}
     for (path,output) in zip(OUTPUT_REGISTRY,ALL_OUTPUTS):
