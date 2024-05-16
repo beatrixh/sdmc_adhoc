@@ -1,11 +1,15 @@
 import pandas as pd, numpy as np
 import os
-import sdmc_tools.constants as constants
-from ldms_monitoring_constants import *
+import yaml
 import datetime
 from typing import List
 
-def was_ldms_updated(NETWORK):
+import sdmc_tools.constants as constants
+from yaml_handling import find_endpoints, read_yaml, get_output_path_from_yaml
+
+
+## check if ldms has been updated today ------------------------------------- ##
+def was_ldms_updated(NETWORK: str) -> bool:
     """
     given a network
     - if ldms has been updated since the last weekday, return True
@@ -29,6 +33,7 @@ def was_ldms_updated(NETWORK):
     LAST_TOUCHED = datetime.datetime.fromtimestamp(LAST_TOUCHED)
     return LAST_TOUCHED.date() > last_weekday
 
+## save todays ldms --------------------------------------------------------- ##
 def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
     """
     INPUTS
@@ -46,7 +51,7 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
                            dtype=dtype_map
                            )
     else:
-        print(f"{NETWORK} IS AN INVALID NETWORK SELECTION\n")
+        print(f"{NETWORK} IS AN INVALID NETWORK SELECTION")
     ldms = ldms.loc[ldms.lstudy.isin(PROTOCOLS)]
     timestamp = datetime.date.today().strftime("%Y%m%d")
 
@@ -54,25 +59,26 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
     for protocol in PROTOCOLS:
         protocol_path = network_path + PROTOCOL_DIRNAME_MAP[NETWORK][int(protocol)]
         if not os.path.exists(protocol_path):
-            print(f"creating protocol dir for {int(protocol)}\n")
+            print(f"creating protocol dir for {int(protocol)}")
             os.mkdir(protocol_path)
         specimen_path = protocol_path + "/specimens"
         if not os.path.exists(specimen_path):
-            print(f"creating specimens dir for {int(protocol)}\n")
+            print(f"creating specimens dir for {int(protocol)}")
             os.mkdir(specimen_path)
         ldms_feed_path = specimen_path + "/ldms_feed"
         if not os.path.exists(ldms_feed_path):
-            print(f"creating ldms_feed dir for {int(protocol)}\n")
+            print(f"creating ldms_feed dir for {int(protocol)}")
             print(ldms_feed_path)
             os.mkdir(ldms_feed_path)
 
         savepath = ldms_feed_path + f"/{NETWORK.lower()}.ldms{int(protocol)}.{timestamp}.csv"
         if not os.path.exists(savepath):
-            print(f"CREATING THE FOLLOWING: {savepath}\n")
+            print(f"CREATING THE FOLLOWING: {savepath}")
             ldms.loc[ldms.lstudy==protocol].to_csv(savepath, index=False)
         else:
-            print(f"{savepath} already exists\n")
+            print(f"{savepath} already exists")
 
+## delete old ldms ---------------------------------------------------------- ##
 def delete_old_ldms(PROTOCOL, NETWORK):
     PROTOCOL = int(PROTOCOL)
     N = len(NETWORK) + len(".ldms") + len(str(PROTOCOL))
@@ -83,9 +89,10 @@ def delete_old_ldms(PROTOCOL, NETWORK):
 
     # delete all but the two most recent
     for file in applicable_things_in_dir[:-2]:
-        print(f"DELETING THE FOLLOWING: {file}\n")
+        print(f"DELETING THE FOLLOWING: {file}")
         os.remove(feed_dir + file)
 
+## detect_ldms_diffs -------------------------------------------------------- ##
 def detect_ldms_diffs(PROTOCOL, NETWORK):
     """
     INPUT
@@ -93,7 +100,7 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
         - network (HVTN or COVPN) associated with protocol
     FUNCTION: determines if yesterday / todays ldms has updates in any of the columns we're interested in
     """
-    print(f"{NETWORK}{PROTOCOL}: reading in data")
+    print(f"\n{NETWORK}{PROTOCOL}: Reading in data")
     old, new = get_ldms_subset(PROTOCOL, NETWORK)
 
     # if either of these are empty, we have nothing to compare ----------------#
@@ -101,20 +108,20 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
         return
 
     # the columns have to match -- otherwise have big problems ----------------#
-    print(f"{NETWORK}{PROTOCOL}: checking for col diff")
+    print(f"{NETWORK}{PROTOCOL}: Checking for col diff")
     COL_DIFF = set(old.columns).symmetric_difference(new.columns)
     if len(COL_DIFF) > 0:
-        print(f"COLUMNS DON'T MATCH. THE FOLLOWING NOT SHARED: {COL_DIFF}\n")
+        print(f"COLUMNS DON'T MATCH. THE FOLLOWING NOT SHARED: {COL_DIFF}")
         return
 
     # do we have the same set of guspecs --------------------------------------#
     guspecs_removed = set(old.guspec).difference(new.guspec)
     if guspecs_removed:
-        print(f"THE FOLLOWING GUSPECS HAVE BEEN REMOVED FROM LDMS: {guspecs_removed}\n")
+        print(f"THE FOLLOWING GUSPECS HAVE BEEN REMOVED FROM LDMS: {guspecs_removed}")
         handle_affected_jobs(guspecs_removed)
     guspecs_added = set(new.guspec).difference(old.guspec)
     if guspecs_added:
-        print(f"THE FOLLOWING GUSPECS HAVE BEEN ADDED TO LDMS {guspecs_added}\n")
+        print(f"THE FOLLOWING GUSPECS HAVE BEEN ADDED TO LDMS {guspecs_added}")
         handle_affected_jobs(guspecs_added)
     if not guspecs_removed and not guspecs_added:
         print(f"{NETWORK}{PROTOCOL}: No guspecs added or removed")
@@ -144,16 +151,16 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
         print(f"DIFFERENCES WITH THE FOLLOWING GUSPECS: {GUSPEC_DIFFS}")
         handle_affected_jobs(GUSPEC_DIFFS)
 
-        print("comparing matching rows:")
+        print("Comparing matching rows:")
         GUSPEC_MATCHES = list(comp.loc[comp.count_x==comp.count_y].index)
         new = new.loc[new.guspec.isin(GUSPEC_MATCHES)]
         old = old.loc[old.guspec.isin(GUSPEC_MATCHES)]
     else:
-        print("\nfor shared guspecs, we have the exact count of each guspec")
+        print("For shared guspecs, we have the exact count of each guspec")
 
     # report on guspecs with matching row counts ------------------------------#
     print("comparing rows with shared guspec / guspec count:")
-    print(f"{NETWORK}{PROTOCOL}: sorting dataframes")
+    print(f"{NETWORK}{PROTOCOL}: Sorting dataframes")
 
     old = old.sort_values(
         by=['guspec','txtpid', 'drawdm', 'drawdd', 'drawdy', 'vidval',
@@ -167,15 +174,16 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
     )
 
     # catch any rows that have mismatch
-    print(f"{NETWORK}{PROTOCOL}: storing dataframe diff")
+    print(f"{NETWORK}{PROTOCOL}: Storing dataframe diff")
     diff = new.compare(old)
     if len(diff) > 0:
-        print(f"CHANGES DETECTED IN SHARED GUSPECS\n")
+        print(f"CHANGES DETECTED IN SHARED GUSPECS")
         AFFECTED_GUSPECS = list(new.iloc[diff.index].guspec.unique())
-        print(f"AFFECTED GUSPECS: {AFFECTED_GUSPECS}\n")
+        print(f"AFFECTED GUSPECS: {AFFECTED_GUSPECS}")
         handle_affected_jobs(AFFECTED_GUSPECS)
     else:
-        print(f"NO DIFF DETECTED FOR {NETWORK}{PROTOCOL}\n")
+        print(f"NO DIFF DETECTED FOR {NETWORK}{PROTOCOL}")
+
 
 # helpers for detect_ldms_diffs ----------------------------------------------##
 def get_ldms_subset(PROTOCOL, NETWORK):
@@ -185,15 +193,9 @@ def get_ldms_subset(PROTOCOL, NETWORK):
     """
     today = datetime.date.today()
     timestamp = today.strftime("%Y%m%d")
-    # if today.weekday() == 0: # if it's a monday
-    #     yesterday = today - datetime.timedelta(days = 3)
-    # else: #any other day. note this is assuming the script isnt run sat or sun
-    #     yesterday = today - datetime.timedelta(days = 1)
-    # prev_timestamp = yesterday.strftime("%Y%m%d")
 
     feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{PROTOCOL_DIRNAME_MAP[NETWORK][int(PROTOCOL)]}/specimens/ldms_feed/"
     fname = f"{NETWORK.lower()}.ldms{PROTOCOL}.{timestamp}.csv"
-    # prev_fname = f"{NETWORK.lower()}.ldms{PROTOCOL}.{prev_timestamp}.csv"
 
     if os.path.exists(feed_dir + fname):
         new = pd.read_csv(feed_dir + fname, dtype=dtype_map)
@@ -201,23 +203,14 @@ def get_ldms_subset(PROTOCOL, NETWORK):
         if len(files) > 1:
             prev_fname = np.sort(os.listdir(feed_dir))[-2]
             old = pd.read_csv(feed_dir + prev_fname, dtype=dtype_map)
+            print(f"{NETWORK}{PROTOCOL}: Comparing {fname} and {prev_fname}")
         else:
-            print(f"NO PRIOR LDMS SAVED FOR {NETWORK}{PROTOCOL}\n")
+            print(f"NO PRIOR LDMS SAVED FOR {NETWORK}{PROTOCOL}")
             old = pd.DataFrame()
     else:
-        print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} TODAY\n")
+        print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} TODAY")
         new = pd.DataFrame()
 
-    # if os.path.exists(feed_dir + prev_fname):
-    #     old = pd.read_csv(feed_dir + prev_fname, dtype=dtype_map)
-    # else:
-    #     print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} YESTERDAY\n")
-    #     old = pd.DataFrame()
-    # if os.path.exists(feed_dir + fname):
-    #     new = pd.read_csv(feed_dir + fname, dtype=dtype_map)
-    # else:
-    #     print(f"NO LDMS SAVED FOR {NETWORK}{PROTOCOL} TODAY\n")
-    #     new = pd.DataFrame()
     return old, new
 
 def handle_affected_jobs(guspecs):
@@ -231,15 +224,12 @@ def handle_affected_jobs_old(guspecs): #report_outputs_corresponding_to_guspecs
     """
     affected_outputs = set()
     for guspec in guspecs:
-        try:
-            for output in GUSPEC_TO_OUTPUT_PATH_OLD[guspec]:
-                affected_outputs.add(output)
-        except:
-            print(f"{guspec} not in any results we're monitoring\n")
+        if guspec in GUSPEC_TO_OUTPUT_PATH_OLD.keys():
+            affected_outputs.update(GUSPEC_TO_OUTPUT_PATH_OLD[guspec])
     if len(affected_outputs) > 0:
-        print(f"AFFECTED OUTPUTS: {list(AFFECTED_OUTPUTS)}\n")
+        print(f"AFFECTED OUTPUTS: {list(AFFECTED_OUTPUTS)}")
     else:
-        print("NO PRE-2024 OUTPUTS AFFECTED\n")
+        print("NO PRE-2024 OUTPUTS AFFECTED")
 
 def handle_affected_jobs_new(guspecs):
     """
@@ -247,22 +237,23 @@ def handle_affected_jobs_new(guspecs):
     return a list of yaml dicts corresponding to jobs that used that guspec
     """
     # pull all yaml_dicts associated with jobs
-    print("finding yamls")
+    print("Checking to see if new (2024+) outputs affected")
+    print("Finding yamls")
     yamls = [
         f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
     ]
-    yamls = [read_yaml(p) for p in yamls]
-    affected_job_yamls = set()
+    yamls = [read_yaml(p, add_path=True) for p in yamls]
+    affected_job_yamls = []
     print("looping through guspecs, checking if in yamls")
     for guspec in guspecs:
         for y in yamls:
             if "guspecs" not in y.keys():
                 print("adding guspecs to yaml")
-                save_guspecs_to_yaml(yamls["yaml_path"])
-                y = read_yaml(yamls["yaml_path"])
+                save_guspecs_to_yaml(y["yaml_path"])
+                y = read_yaml(y["yaml_path"], add_path=True)
             if guspec in y["guspecs"]:
-                print("found guspec in an output")
-                affected_job_yamls.add(y)
+                print(f"found guspec in an output: {guspec}")
+                affected_job_yamls += [y]
     if len(affected_job_yamls) > 0:
         print("NEW OUTPUTS AFFECTED")
         for y in affected_job_yamls:
@@ -271,74 +262,6 @@ def handle_affected_jobs_new(guspecs):
             rerun_affected_job(y)
     else:
         print("NO NEW (2024+) OUTPUTS AFFECTED")
-
-def rerun_affected_job(affected_job_yaml):
-    """
-    given a yaml, report that we're trying to regenerate
-    the corresponding output and rerun the corresponding script
-    """
-    yaml_path = affected_job_yaml["yaml_path"]
-    # yaml = '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN128/PKSMC/paths.yaml'
-    script_path = yaml_path[len("/home/bhaddock/repos/sdmc-adhoc/"):-len("/paths.yaml")] + "/process_data.py"
-    print(f"Rerunning {script_path}")
-    package = script_path[:-3].replace("/",".")
-    try:
-        rerun = getattr(__import__(package, fromlist=["main"]), "main")
-        rerun()
-    except:
-        print(f"ERROR trying to run {script_path}")
-
-def get_output_path_from_yaml(yaml_dict):
-    files = os.listdir(yaml_dict['savedir'])
-    fname = np.sort([f for f in files if yaml_dict['output_prefix'] in f])[-1]
-    output_path = yaml_dict['savedir']
-    if output_path[-1] != "/":
-        output_path += "/"
-    output_path += fname
-    return output_path
-
-def find_endpoints(d, l):
-    """
-    for everything in dir ('/home/bhaddock/repos/sdmc-adhoc/processing_scripts')
-    return if it's an endpoint (non-dir)
-    """
-    if os.path.isdir(d):
-        for c in os.listdir(d):
-            l = find_endpoints(d + "/" + c, l)
-        return l
-    else:
-        return l + [d]
-
-def read_yaml(yaml_path, add_path=True):
-    """
-    given yaml path
-    optionally add yaml_path to yaml dict
-    return yaml dict
-    """
-    with open(yaml_path, 'r') as file:
-        yaml_dict = yaml.safe_load(file)
-    yaml_dict["yaml_path"] = yaml_path
-    return yaml_dict
-
-def get_output_path_from_yaml(yaml_dict):
-    files = os.listdir(yaml_dict['savedir'])
-    fname = np.sort([f for f in files if yaml_dict['output_prefix'] in f])[-1]
-    output_path = yaml_dict['savedir']
-    if output_path[-1] != "/":
-        output_path += "/"
-    output_path += fname
-    return output_path
-
-def read_yaml(yaml_path, add_path=True):
-    """
-    given yaml path
-    optionally add yaml_path to yaml dict
-    return yaml dict
-    """
-    with open(yaml_path, 'r') as file:
-        yaml_dict = yaml.safe_load(file)
-    yaml_dict["yaml_path"] = yaml_path
-    return yaml_dict
 
 def save_guspecs_to_yaml(yaml_path):
     """
@@ -358,9 +281,79 @@ def save_guspecs_to_yaml(yaml_path):
         elif path[-3:]=="csv":
             data = pd.read_csv(path)
         else:
-            print(path)
             raise Exception(f"PUT EXCEPTION HERE; FILEPATH {path} WRONG")
         guspecs += data.guspec.tolist()
     yaml_dict['guspecs'] = list(set(guspecs))
     with open(yaml_path, 'w') as outfile:
         yaml.dump(yaml_dict, outfile, default_flow_style=False, sort_keys=False)
+
+def rerun_affected_job(affected_job_yaml):
+    """
+    given a yaml, report that we're trying to regenerate
+    the corresponding output and rerun the corresponding script
+    """
+    yaml_path = affected_job_yaml["yaml_path"]
+    # yaml = '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN128/PKSMC/paths.yaml'
+    script_path = yaml_path[len("/home/bhaddock/repos/sdmc-adhoc/"):-len("/paths.yaml")] + "/process_data.py"
+    print(f"Rerunning {script_path}")
+    package = script_path[:-3].replace("/",".")
+    try:
+        rerun = getattr(__import__(package, fromlist=["main"]), "main")
+        rerun()
+    except:
+        print(f"ERROR trying to run {script_path}")
+
+## pull in constants -------------------------------------------------------- ##
+yamlpath = "constants.yaml"
+yamldict = read_yaml(yamlpath)
+
+PROTOCOL_DIRNAME_MAP = yamldict["PROTOCOL_DIRNAME_MAP"]
+dtype_map = yamldict["dtype_map"]
+GUSPEC_TO_OUTPUT_PATH_OLD = yamldict["GUSPEC_TO_OUTPUT_PATH_OLD"]
+
+
+
+
+
+# def read_in_output(path):
+#     """
+#     INPUT: filepath to csv or txt of data
+#     OUTPUT: data contained at filepath, columns standardized
+#     """
+#     filetype = path.rpartition(".")[-1]
+#     if filetype =="txt":
+#         data = pd.read_csv(path, sep="\t")
+#     elif filetype == "csv":
+#         data = pd.read_csv(path)
+#     else:
+#         return f"UNRECOGNIZED FILETYPE: {filetype}"
+#     # if we were able to read in the data
+#     data.columns = [i.lower() for i in data.columns]
+#     return data
+
+# def get_output_filepath_from_yaml(yamlpath: str) -> list:
+#     with open(yamlpath, 'r') as file:
+#         yaml_dict = yaml.safe_load(file)
+#     output_dir = yaml_dict["savedir"]
+#     if output_dir[-1]!="/":
+#         output_dir += "/"
+#     #TODO: add try/excepts for if there's a nonmatch or this is missing
+#     try:
+#         prefixes = yaml_dict["output_prefix"]
+#         if not isinstance(prefixes, list):
+#             prefixes = [prefixes]
+#         fnames = []
+#         for prefix in prefixes:
+#             matches = [file for file in os.listdir(output_dir) if file[:len(prefix)]==prefix]
+#             fnames += [output_dir + np.sort(matches)[-1]]
+#         return fnames
+#     except:
+#         return [output_dir + "MISSING"]
+#
+# def get_output_registry_new():
+#     endpoints = find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[])
+#     yamls = [file for file in endpoints if file.split("/")[-1]=="paths.yaml"]
+#     output_paths = []
+#     for y in yamls:
+#         output_paths += get_output_filepath_from_yaml(y)
+#     return output_paths
