@@ -6,8 +6,8 @@
 ## ---------------------------------------------------------------------------##
 import pandas as pd
 from datetime import date
-import sdmc_adhoc_processing.process as sdmc
-import sdmc_adhoc_processing.constants as constants
+import sdmc_tools.process as sdmc
+import sdmc_tools.constants as constants
 
 ## ---------------------------------------------------------------------------##
 # We need to process both the new and the old data in the same manner, but append

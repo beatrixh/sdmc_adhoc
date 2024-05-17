@@ -6,9 +6,10 @@
 import pandas as pd
 import datetime
 import os
+import yaml
 
-import sdmc_adhoc_processing.process as sdmc
-import sdmc_adhoc_processing.constants as constants
+import sdmc_tools.process as sdmc
+import sdmc_tools.constants as constants
 # read in data ---------------------------------------------------------------##
 def main():
     yaml_path = os.path.dirname(__file__) + "/paths.yaml"
@@ -52,44 +53,30 @@ def main():
     # remove any whitespace
     data.guspec = data.guspec.replace(" ", "")
 
-    # merge on additional metadata -----------------------------------------------##
+    # standard processing ----------------------------------------------------##
 
-    # load data handler
-    dh = sdmc.DataHandler(
-        input_data = data,
-        guspec_col = 'guspec',
-        network = 'hvtn',
+    ldms = pd.read_csv(constants.LDMS_PATH_HVTN)
+    ldms = ldms.loc[ldms.lstudy==302.]
+
+    metadata_dict = {
+            'network': 'HVTN',
+            'upload_lab_id': 'N4',
+            'assay_lab_name': 'Rules-Based Medicine (RBM)',
+            'instrument': 'Luminex',
+            'assay_type': 'DiscoveryMAP',
+            'specrole': 'Sample',
+    }
+
+    outputs = sdmc.standard_processing(
+        input_data=data,
+        input_data_path=input_data_path,
+        guspec_col="guspec",
+        network="hvtn",
+        metadata_dict=metadata_dict,
+        ldms=ldms
     )
-
-    # merge ldms
-    dh.add_ldms(
-        cols = constants.STANDARD_COLS,
-        incl_spec_type=True,
-        map_drawdt=True,
-        relabel=True
-    )
-
-    # add human-entered metadata
-    dh.add_metadata({
-        'network': 'HVTN',
-        'check_upload_lab_id': 'N4',
-        'assay_lab_name': 'Rules-Based Medicine (RBM)',
-        'instrument': 'Luminex',
-        'assay_type': 'DiscoveryMAP',
-        'specrole': 'Sample',
-    })
-
-    # add processing info
-    dh.add_sdmc_processing_info(input_data_path=input_data_path)
 
     # misc other formatting/corrections ------------------------------------------##
-
-    outputs = dh.processed_data.copy()
-
-    # this is an error in DataHandler;
-    # drop the upload_lab_id column (this isnt what we want) and use the human-entered one (from LUT)
-    outputs = outputs.drop(columns="upload_lab_id")
-    outputs = outputs.rename(columns={"check_upload_lab_id":"upload_lab_id"})
 
     # merge on lab-submitted metadata
     outputs = outputs.merge(metadata, how="cross")
@@ -117,22 +104,17 @@ def main():
                'input_file_name']
 
     print(f"symm diff in cols: {set(reorder).symmetric_difference(outputs.columns)}")
-
     # reorder columns
     outputs = outputs[reorder]
-
-    # fix dtypes
-    for col in ['protocol', 'ptid']:
-        outputs[col] = outputs[col].astype(int).astype(str)
 
     # got rid of this column; it was all NaN
     outputs = outputs.drop(columns="group_designation")
 
     # save to .txt
-    output_dir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/IgE_total_RBM/misc_files/data_processing/'
-    savename = 'DRAFT_HVTN302_IGE_processed_2024-03-07.txt'
+    today = datetime.datetime.today().strftime('%Y-%m-%d')
+    save_fname = "DRAFT_" + yaml_dict["output_prefix"] + f"_{today}.txt"
 
-    outputs.to_csv(output_dir + savename, sep="\t", index=False)
+    outputs.to_csv(yaml_dict["savedir"] + save_fname, sep="\t", index=False)
 
 if __name__ == '__main__':
     main()

@@ -6,8 +6,8 @@
 ## ---------------------------------------------------------------------------##
 import pandas as pd
 import datetime, os
-import sdmc_adhoc_processing.process as sdmc
-import sdmc_adhoc_processing.constants as constants
+import sdmc_tools.process as sdmc
+import sdmc_tools.constants as constants
 
 ## Read in data --------------------------------------------------------------##
 def main():

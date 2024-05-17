@@ -39,7 +39,7 @@ def get_output_path_from_yaml(yaml_dict: dict) -> list:
         output_path += "/"
     return [output_path + f for f in fnames]
 
-def overwrite_yaml_protocols(network: str, protocols: list):
+def overwrite_yaml_protocols(network: str, protocols: list) -> None:
     """
     given a network and the corresponding protocols,
     overwrite in sdmc-adhoc/constants.yaml the list of
@@ -49,7 +49,7 @@ def overwrite_yaml_protocols(network: str, protocols: list):
     protocols = protocols[~np.isnan(protocols)].astype(int)
     protocols = np.unique(protocols).tolist()
 
-    yamlpath = 'constants.yaml'
+    yamlpath = os.path.dirname(__file__) + "/constants.yaml"
     with open(yamlpath, 'r') as file:
         yamldict = yaml.safe_load(file)
 
@@ -59,14 +59,14 @@ def overwrite_yaml_protocols(network: str, protocols: list):
         yaml.dump(yamldict, outfile, default_flow_style=False, sort_keys=False)
 
 
-def add_to_yaml_protocols(network: str, new_protocols: list):
+def add_to_yaml_protocols(network: str, new_protocols: list) -> None:
     """
     given a network and corresponding protocols,
     add to the list of protocols in sdmc-adhoc/constants.yaml
     if the new protocols aren't already tracked
     """
     # read in yaml
-    yamlpath = 'constants.yaml'
+    yamlpath = os.path.dirname(__file__) + "/constants.yaml"
     with open(yamlpath, 'r') as file:
         yamldict = yaml.safe_load(file)
 
@@ -86,7 +86,7 @@ def add_to_yaml_protocols(network: str, new_protocols: list):
     with open(yamlpath, 'w') as outfile:
         yaml.dump(yamldict, outfile, default_flow_style=False, sort_keys=False)
 
-def get_protocol_from_output(datapath: str):
+def get_protocol_from_output(datapath: str) -> dict:
     """
     given a path to a datafile of outputs
     that contains "network" and "protocol" columns
@@ -114,7 +114,7 @@ def get_protocol_from_output(datapath: str):
 
     return {"hvtn": hvtn, "covpn": covpn}
 
-def get_protocols_from_old_outputs():
+def get_protocols_from_old_outputs() -> dict:
     """
     get a list of all applicable protocols for each network
     in old (pre-2024) outputs, and return as a dict
@@ -128,7 +128,7 @@ def get_protocols_from_old_outputs():
     return {"hvtn": list(hvtn), "covpn": list(covpn)}
 
 
-def get_protocols_from_new_outputs():
+def get_protocols_from_new_outputs() -> dict:
     """
     get a list of all applicable protocols for each network
     in new (2024+) outputs, and return as a dict
@@ -148,9 +148,8 @@ def get_protocols_from_new_outputs():
     return {"hvtn": list(hvtn), "covpn": list(covpn)}
 
 if __name__=='__main__':
-    yamlpath = "constants.yaml"
-    with open(yamlpath, 'r') as file:
-        yamldict = yaml.safe_load(file)
+    yamlpath = os.path.dirname(__file__) + "/constants.yaml"
+    yamldict = read_yaml(yamlpath)
     OUTPUT_REGISTRY_OLD = yamldict["OUTPUT_REGISTRY_OLD"]
 
     # old_protocols = get_protocols_from_old_outputs()

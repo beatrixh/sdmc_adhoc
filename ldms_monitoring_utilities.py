@@ -34,7 +34,7 @@ def was_ldms_updated(NETWORK: str) -> bool:
     return LAST_TOUCHED.date() > last_weekday
 
 ## save todays ldms --------------------------------------------------------- ##
-def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
+def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str) -> None:
     """
     INPUTS
      - PROTOCOLS: list of PROTOCOLS (numeric) from one network
@@ -79,7 +79,7 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str):
             print(f"{savepath} already exists")
 
 ## delete old ldms ---------------------------------------------------------- ##
-def delete_old_ldms(PROTOCOL, NETWORK):
+def delete_old_ldms(PROTOCOL: str, NETWORK: str) -> None:
     PROTOCOL = int(PROTOCOL)
     N = len(NETWORK) + len(".ldms") + len(str(PROTOCOL))
     feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{PROTOCOL_DIRNAME_MAP[NETWORK][int(PROTOCOL)]}/specimens/ldms_feed/"
@@ -89,11 +89,11 @@ def delete_old_ldms(PROTOCOL, NETWORK):
 
     # delete all but the two most recent
     for file in applicable_things_in_dir[:-2]:
-        print(f"DELETING THE FOLLOWING: {file}")
+        print(f"DELETING THE FOLLOWING: {file}\n")
         os.remove(feed_dir + file)
 
 ## detect_ldms_diffs -------------------------------------------------------- ##
-def detect_ldms_diffs(PROTOCOL, NETWORK):
+def detect_ldms_diffs(PROTOCOL: str, NETWORK: str) -> None:
     """
     INPUT
         - protocol number (int)
@@ -186,7 +186,7 @@ def detect_ldms_diffs(PROTOCOL, NETWORK):
 
 
 # helpers for detect_ldms_diffs ----------------------------------------------##
-def get_ldms_subset(PROTOCOL, NETWORK):
+def get_ldms_subset(PROTOCOL: str, NETWORK: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Given a protocol and network
     return the prior saved ldms [CURRENTLY DEFINED ONLY AS LAST WEEKDAY] and today's ldms
@@ -213,11 +213,11 @@ def get_ldms_subset(PROTOCOL, NETWORK):
 
     return old, new
 
-def handle_affected_jobs(guspecs):
+def handle_affected_jobs(guspecs: list) -> None:
     handle_affected_jobs_old(guspecs)
     handle_affected_jobs_new(guspecs)
 
-def handle_affected_jobs_old(guspecs): #report_outputs_corresponding_to_guspecs
+def handle_affected_jobs_old(guspecs: list) -> None: #report_outputs_corresponding_to_guspecs
     """
     given a list of guspecs with changes in ldms,
     report on any that are used by older (non-auto rerunnable) jobs
@@ -229,9 +229,9 @@ def handle_affected_jobs_old(guspecs): #report_outputs_corresponding_to_guspecs
     if len(affected_outputs) > 0:
         print(f"AFFECTED OUTPUTS: {list(AFFECTED_OUTPUTS)}")
     else:
-        print("NO PRE-2024 OUTPUTS AFFECTED")
+        print("\nNO PRE-2024 OUTPUTS AFFECTED")
 
-def handle_affected_jobs_new(guspecs):
+def handle_affected_jobs_new(guspecs: list) -> None:
     """
     given a list guspecs with changes in ldms,
     return a list of yaml dicts corresponding to jobs that used that guspec
@@ -261,9 +261,9 @@ def handle_affected_jobs_new(guspecs):
             print(f"The following output file affected: {output_path}")
             rerun_affected_job(y)
     else:
-        print("NO NEW (2024+) OUTPUTS AFFECTED")
+        print("\nNO NEW (2024+) OUTPUTS AFFECTED")
 
-def save_guspecs_to_yaml(yaml_path):
+def save_guspecs_to_yaml(yaml_path: str) -> None:
     """
     given a filepath to a yaml that contains
     - a savedir
@@ -287,7 +287,7 @@ def save_guspecs_to_yaml(yaml_path):
     with open(yaml_path, 'w') as outfile:
         yaml.dump(yaml_dict, outfile, default_flow_style=False, sort_keys=False)
 
-def rerun_affected_job(affected_job_yaml):
+def rerun_affected_job(affected_job_yaml: str) -> None:
     """
     given a yaml, report that we're trying to regenerate
     the corresponding output and rerun the corresponding script
@@ -304,15 +304,12 @@ def rerun_affected_job(affected_job_yaml):
         print(f"ERROR trying to run {script_path}")
 
 ## pull in constants -------------------------------------------------------- ##
-yamlpath = "constants.yaml"
+yamlpath = os.path.dirname(__file__) + "/constants.yaml"
 yamldict = read_yaml(yamlpath)
 
 PROTOCOL_DIRNAME_MAP = yamldict["PROTOCOL_DIRNAME_MAP"]
 dtype_map = yamldict["dtype_map"]
 GUSPEC_TO_OUTPUT_PATH_OLD = yamldict["GUSPEC_TO_OUTPUT_PATH_OLD"]
-
-
-
 
 
 # def read_in_output(path):
@@ -349,11 +346,3 @@ GUSPEC_TO_OUTPUT_PATH_OLD = yamldict["GUSPEC_TO_OUTPUT_PATH_OLD"]
 #         return fnames
 #     except:
 #         return [output_dir + "MISSING"]
-#
-# def get_output_registry_new():
-#     endpoints = find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[])
-#     yamls = [file for file in endpoints if file.split("/")[-1]=="paths.yaml"]
-#     output_paths = []
-#     for y in yamls:
-#         output_paths += get_output_filepath_from_yaml(y)
-#     return output_paths
