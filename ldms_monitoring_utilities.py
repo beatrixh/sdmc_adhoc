@@ -242,6 +242,7 @@ def handle_affected_jobs_new(guspecs: list) -> None:
     yamls = [
         f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
     ]
+    print("yamls obtained")
     yamls = [read_yaml(p, add_path=True) for p in yamls]
     affected_job_yamls = []
     print("looping through guspecs, checking if in yamls")

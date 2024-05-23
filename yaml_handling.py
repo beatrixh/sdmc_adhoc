@@ -24,8 +24,12 @@ def read_yaml(yaml_path: str, add_path:bool = False) -> dict:
     """
     with open(yaml_path, 'r') as file:
         yaml_dict = yaml.safe_load(file)
-    yaml_dict["yaml_path"] = yaml_path
-    return yaml_dict
+    if yaml_dict is None:
+        print(f"{yaml_path} is currently empty; please fill in")
+        return {"yaml_path": yaml_path}
+    else:
+        yaml_dict["yaml_path"] = yaml_path
+        return yaml_dict
 
 def get_output_path_from_yaml(yaml_dict: dict) -> list:
     files = os.listdir(yaml_dict['savedir'])
