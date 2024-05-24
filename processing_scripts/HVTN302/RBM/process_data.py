@@ -33,7 +33,7 @@ def main():
 
     # grab third chunk of metadata
     metadata3 = inputs.iloc[9:15,[1,3]]
-    metadata = metadata3.T.rename(columns=metadata3.T.iloc[0]).iloc[1:].reset_index(drop=True)
+    metadata3 = metadata3.T.rename(columns=metadata3.T.iloc[0]).iloc[1:].reset_index(drop=True)
 
     # subset data out of input sheet
     data = inputs.iloc[17:296,[1,3]]
@@ -53,10 +53,17 @@ def main():
     # remove any whitespace
     data.guspec = data.guspec.replace(" ", "")
 
-    # standard processing ----------------------------------------------------##
+    # merge on lab-submitted metadata (we decided to drop #2)
+    data = data.merge(metadata1, how="cross")
+    data = data.merge(metadata3, how="cross")
 
-    ldms = pd.read_csv(constants.LDMS_PATH_HVTN)
+    # columns to lowercase
+    data.columns = [col.lower().replace(" ","_") for col in data.columns]
+
+    # standard processing ----------------------------------------------------##
+    ldms = pd.read_csv(constants.LDMS_PATH_HVTN, usecols=constants.STANDARD_COLS)
     ldms = ldms.loc[ldms.lstudy==302.]
+    ldms = ldms.loc[ldms.guspec.isin(data.guspec.unique().tolist())]
 
     metadata_dict = {
             'network': 'HVTN',
@@ -76,41 +83,35 @@ def main():
         ldms=ldms
     )
 
-    # misc other formatting/corrections ------------------------------------------##
-
-    # merge on lab-submitted metadata
-    outputs = outputs.merge(metadata, how="cross")
-    outputs = outputs.merge(metadata1, how="cross")
-
-    # reformat columns
-    outputs.columns = [col.lower().replace(" ","_") for col in outputs.columns]
-
+    # cleanup ----------------------------------------------------------------##
     outputs = outputs.rename(columns = {
         'analytes': 'analyte',
-        'study_': 'study',
         'rbm_ldd': 'llod',
         'rbm_lloq': 'lloq',
         'rbm_serum_low_range': 'reference_range_low',
         'rbm_serum_high_range': 'reference_range_high',
     })
 
+    # got rid of this column; it was all NaN
+    outputs = outputs.drop(columns="group_designation")
+
     reorder = ['network', 'protocol', 'specrole', 'guspec', 'ptid', 'visitno',
                'drawdt', 'spectype', 'spec_primary', 'spec_additive',
                'spec_derivative', 'upload_lab_id', 'assay_lab_name', 'assay_type',
                'instrument', 'analyte', 'units', 'result', 'llod', 'lloq',
                'reference_range_low', 'reference_range_high', 'sample_id_lab',
-               'rbm_order', 'customer', 'group_designation', 'investigator',
+               'rbm_order', 'customer', 'investigator',
                'sdmc_processing_datetime', 'sdmc_data_receipt_datetime',
                'input_file_name']
 
-    print(f"symm diff in cols: {set(reorder).symmetric_difference(outputs.columns)}")
+    col_diff = set(reorder).symmetric_difference(outputs.columns)
+    if len(list(col_diff)) > 0:
+        raise Exception(f"The following cols being dropped or added: {col_diff}")
+
     # reorder columns
     outputs = outputs[reorder]
 
-    # got rid of this column; it was all NaN
-    outputs = outputs.drop(columns="group_designation")
-
-    # save to .txt
+    # save -------------------------------------------------------------------##
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     save_fname = "DRAFT_" + yaml_dict["output_prefix"] + f"_{today}.txt"
 
