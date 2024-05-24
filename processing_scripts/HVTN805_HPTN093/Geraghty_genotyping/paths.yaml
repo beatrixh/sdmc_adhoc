@@ -1,0 +1,20 @@
+input_data_path:
+- /trials/vaccine/p805/s001/qdata/LabData/Genotyping_pass-through/HVTN805-20240405-additional-gID.xlsx
+- /trials/vaccine/p805/s001/qdata/LabData/Genotyping_pass-through/HVTN805-HLA-CCR5-name-revised.xlsx
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN805_HPTN093/assays/genotyping/misc_files/data_processing/
+output_prefix:
+- HVTN805_HLA_genotyping_processed
+- HVTN805_CCR5_genotyping_processed
+yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN805_HPTN093/Geraghty_genotyping/paths.yaml
+guspecs:
+- C8Y1TMHM-03
+- G8Y1TM0T-03
+- 0410-0J6RMA00-003
+- 0219-02FS4G00-003
+- 0410-0H2THA00-003
+- 0306-0CL14F00-003
+- 0306-0CPK3G00-003
+- 0306-0CHWVD00-003
+- 0245-07NZDB00-003
+- 0306-0CNVVE00-003
+- G8Y1TNYS-03

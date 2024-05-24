@@ -1,0 +1,25 @@
+input_data_path: /trials/vaccine/p704/s670/qdata/HLA_pass-through/HVTN704-HLA-CCR5.xlsx
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN703_704/assays/genotyping/misc_files/data_processing/
+output_prefix:
+- HVTN704-HLA_processed
+- HVTN704-CCR5_processed
+yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN703_704/Geraghty_genotyping/paths.yaml
+guspecs:
+- H9412KS9-01
+- H9416Z3M-01
+- G9415PS3-01
+- K9417YF5-01
+- B9412Y8R-01
+- C9413Q97-01
+- B9412DSH-01
+- D941CY6Y-01
+- B9413LVC-01
+- K9419R1P-01
+- A8607KTD-01
+- E941111K-01
+- K941244G-01
+- B9418LGG-01
+- B94167KL-01
+- D9410WDZ-01
+- K941DHXQ-01
+- EKQ00D3K-01

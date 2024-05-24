@@ -1,0 +1,21 @@
+input_data_path: /trials/vaccine/p303/s001/qdata/LabData/VRC_BCP_pass-through/HVTN303_VRC_Andrews_BCP_20240418.csv
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN303/assays/BCP/misc_files/data_processing/
+output_prefix: HVTN303_VRC_BCP_processed
+yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN303/VRC_BCP/paths.yaml
+guspecs:
+- 0177-031LZK00-002
+- 0177-0327FD00-002
+- 0177-031N3E00-001
+- 0177-031LXB00-002
+- 0374-01DWNB00-002
+- 0438-0295LK00-001
+- 0438-029NDK00-001
+- 0177-031KTJ00-001
+- 0374-01F26A00-001
+- 0177-03262D00-001
+- 0177-0326FF00-002
+- 0438-0291GG00-002
+- 0438-029NTH00-002
+- 0177-0328QB00-002
+- 0438-029PGK00-002
+- 0438-02947B00-002
