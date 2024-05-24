@@ -57,9 +57,6 @@ def main():
     data = data.merge(metadata1, how="cross")
     data = data.merge(metadata3, how="cross")
 
-    # columns to lowercase
-    data.columns = [col.lower().replace(" ","_") for col in data.columns]
-
     # standard processing ----------------------------------------------------##
     ldms = pd.read_csv(constants.LDMS_PATH_HVTN, usecols=constants.STANDARD_COLS)
     ldms = ldms.loc[ldms.lstudy==302.]
