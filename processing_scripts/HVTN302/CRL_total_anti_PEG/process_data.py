@@ -171,3 +171,6 @@ def main():
 def pivot():
     pd.pivot_table(data=outputs, values='result', index='ptid', columns='visitno', aggfunc='count', fill_value=0).to_csv(savedir + "ptid_visitno_summary.csv")
     outputs.guspec.value_counts().to_frame().to_csv(savedir + "guspec_summary.csv")
+
+if __name__ == '__main__':
+    main()
