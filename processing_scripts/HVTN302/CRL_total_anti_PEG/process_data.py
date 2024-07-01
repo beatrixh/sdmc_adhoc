@@ -11,7 +11,8 @@ import sdmc_tools.constants as constants
 
 ## Read in data --------------------------------------------------------------##
 def main():
-    ldms = pd.read_csv(constants.LDMS_PATH_HVTN)
+    ldms_path = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/specimens/ldms_feed/hvtn.ldms302.20240627.csv'
+    ldms = pd.read_csv(ldms_path, usecols=constants.STANDARD_COLS, dtype=constants.LDMS_DTYPE_MAP)
     ldms = ldms.loc[ldms.lstudy==302.]
 
     yaml_path = os.path.dirname(__file__) + "/paths.yaml"
@@ -49,7 +50,7 @@ def main():
         'Positive Titer (>6400.000)': 'Positive',
         3200: 'Positive',
         'Negative Screen': 'Negative',
-        'Negative Titer (<50.000)': 'Negative',
+        'Negative Titer (<50.000)': 'Positive',
         800: 'Positive',
         200: 'Positive',
         'Negative Immunodepletion': 'Negative',
@@ -114,11 +115,11 @@ def main():
         'barcode_id',
         'custom_id',
         'sample_name',
-        'ir_result_text'
     ])
 
     ## rename columns
     rename = {
+        'ir_result_text':'result_as_submitted',
         'run_id': 'lab_internal_run_id',
         'sample_receipt_date': 'lab_internal_sample_receipt_date',
         'sample_user_text_1': 'sample_id_submitted',
@@ -147,6 +148,7 @@ def main():
         'result',
         'result_units',
         'result_interpretation',
+        'result_as_submitted',
         'assay_precision',
         'lab_internal_run_id',
         'lab_internal_sample_receipt_date',
@@ -156,7 +158,8 @@ def main():
         'input_file_name'
     ]
 
-    if len(list(dir(set(reorder).symmetric_difference(outputs.columns)))) > 0:
+    if len(list(set(reorder).symmetric_difference(outputs.columns))) > 0:
+        print(set(reorder).symmetric_difference(outputs.columns))
         raise Exception("Oops; trying to drop or add columns")
 
     outputs = outputs[reorder]
