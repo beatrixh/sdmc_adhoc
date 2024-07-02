@@ -152,7 +152,7 @@ def main():
     outputs = outputs[reorder]
 
     ## save results ----------------------------------------------------------##
-    today = "2024-06-18-13_58"
+    today = datetime.date.today().isoformat()
     fname = f"DRAFT_HVTN302_glycan_data_processed_{today}.txt"
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/"
 

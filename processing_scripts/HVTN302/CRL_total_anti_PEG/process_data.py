@@ -35,11 +35,11 @@ def main():
         1600: '1600',
         'Positive Titer (>6400.000)': '>6400',
         3200: '3200',
-        'Negative Screen': "N/A (Negative Screen)",
+        'Negative Screen': "Negative Screen",
         'Negative Titer (<50.000)': '<50',
         800: '800',
         200: '200',
-        'Negative Immunodepletion': 'N/A (Negative Immunodepletion)',
+        'Negative Immunodepletion': 'Negative Immunodepletion',
         50: '50'
     }
 
@@ -63,11 +63,11 @@ def main():
         1600: 'Titer',
         'Positive Titer (>6400.000)': 'Titer',
         3200: 'Titer',
-        'Negative Screen': 'N/A (Negative Screen)',
+        'Negative Screen': 'N/A',
         'Negative Titer (<50.000)': 'Titer',
         800: 'Titer',
         200: 'Titer',
-        'Negative Immunodepletion': 'N/A (Negative Immunodepletion)',
+        'Negative Immunodepletion': 'N/A',
         50: 'Titer'
     }
 
