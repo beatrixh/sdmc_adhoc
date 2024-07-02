@@ -2,9 +2,11 @@ hvtn_protocols:
 - 92
 - 96
 - 128
+- 135
 - 139
 - 302
 - 303
+- 304
 - 503
 - 703
 - 805
@@ -112,17 +114,6 @@ PROTOCOL_DIRNAME_MAP:
     5001: CoVPN5001
     5002: CoVPN5002
     5003: CoVPN5003
-dtype_map:
-  txtpid: string
-  drawdm: Int64
-  drawdd: Int64
-  drawdy: Int64
-  vidval: Float64
-  lstudy: Float64
-  guspec: string
-  primstr: string
-  addstr: string
-  dervstr: string
 GUSPEC_TO_OUTPUT_PATH_OLD:
   0367-01WKRA00-001:
   - /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/CoVPN3008_FCM08_AP59_CH_20221229E01FLO_B.txt

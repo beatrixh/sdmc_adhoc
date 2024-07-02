@@ -43,12 +43,12 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str) -> None:
     if NETWORK=="HVTN":
         ldms = pd.read_csv(constants.LDMS_PATH_HVTN,
                            usecols=constants.STANDARD_COLS,
-                           dtype=dtype_map
+                           dtype=constants.LDMS_DTYPE_MAP
                            )
     elif NETWORK=="CoVPN":
         ldms = pd.read_csv(constants.LDMS_PATH_COVPN,
                            usecols=constants.STANDARD_COLS,
-                           dtype=dtype_map
+                           dtype=constants.LDMS_DTYPE_MAP
                            )
     else:
         print(f"{NETWORK} IS AN INVALID NETWORK SELECTION")
@@ -198,11 +198,11 @@ def get_ldms_subset(PROTOCOL: str, NETWORK: str) -> tuple[pd.DataFrame, pd.DataF
     fname = f"{NETWORK.lower()}.ldms{PROTOCOL}.{timestamp}.csv"
 
     if os.path.exists(feed_dir + fname):
-        new = pd.read_csv(feed_dir + fname, dtype=dtype_map)
+        new = pd.read_csv(feed_dir + fname, dtype=constants.LDMS_DTYPE_MAP)
         files = os.listdir(feed_dir)
         if len(files) > 1:
             prev_fname = np.sort(os.listdir(feed_dir))[-2]
-            old = pd.read_csv(feed_dir + prev_fname, dtype=dtype_map)
+            old = pd.read_csv(feed_dir + prev_fname, dtype=constants.LDMS_DTYPE_MAP)
             print(f"{NETWORK}{PROTOCOL}: Comparing {fname} and {prev_fname}")
         else:
             print(f"NO PRIOR LDMS SAVED FOR {NETWORK}{PROTOCOL}")
@@ -309,7 +309,6 @@ yamlpath = os.path.dirname(__file__) + "/constants.yaml"
 yamldict = read_yaml(yamlpath)
 
 PROTOCOL_DIRNAME_MAP = yamldict["PROTOCOL_DIRNAME_MAP"]
-dtype_map = yamldict["dtype_map"]
 GUSPEC_TO_OUTPUT_PATH_OLD = yamldict["GUSPEC_TO_OUTPUT_PATH_OLD"]
 
 

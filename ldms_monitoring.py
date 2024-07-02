@@ -27,8 +27,8 @@ def check_for_updates(protocols: list, network: str) -> None:
     else:
         print(f"{network} LDMS HASN'T BEEN UPDATED TODAY\n")
 
-print(f"hvtn protocols: {hvtn_protocols}")
-print(f"covpn protocols: {covpn_protocols}")
+print(f"hvtn protocols: {hvtn_protocols}\n")
+print(f"covpn protocols: {covpn_protocols}\n")
 
 check_for_updates(hvtn_protocols, "HVTN")
 check_for_updates(covpn_protocols, "CoVPN")
