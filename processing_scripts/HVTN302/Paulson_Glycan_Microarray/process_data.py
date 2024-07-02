@@ -158,5 +158,27 @@ def main():
 
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
+def pivot():
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/"
+    outputs = pd.read_csv(savedir + "HVTN302_glycan_data_processed_2024-06-18.txt", sep="\t")
+
+    guspec_by_glycan = pd.pivot_table(
+                            outputs,
+                            index='guspec',
+                            columns='glycan_m_number',
+                            values='f488_mean_minus_b488_mean',
+                            aggfunc='count'
+                            )
+    guspec_by_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_guspec_x_glycan_summary_count.xlsx")
+
+    ptid_visit_glycan = pd.pivot_table(
+                            outputs,
+                            index=['ptid','visitno'],
+                            columns='glycan_m_number',
+                            aggfunc='count'
+                            )
+    ptid_visit_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_ptid_visitno_x_glycan_summary_count.xlsx")
+
 if __name__ == '__main__':
     main()
+    pivot()
