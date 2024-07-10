@@ -26,6 +26,10 @@ def main():
         data['filter_pass'] = path.split("/")[-1].split(".")[0].split("_")[-1]
         usecols = ['ptid', 'Name', 'Block', 'filter_pass', 'F488 Mean', 'B488 Mean']
         data = data.loc[~data.Name.isin(["empty","Empty","DyeSpot"]),usecols]
+        data = data.rename(columns={'Name':'spot_name',
+                                    'F488 Mean':'f488_mean',
+                                    'B488 Mean':'b488_mean',
+                                    'Block':'block'})
         return data
 
     data = pd.DataFrame()
@@ -51,7 +55,7 @@ def main():
     metadata['timepoint'] = metadata.apply(lambda x: label_timepoint(x['ptid'], x['visitno']), axis=1)
 
     block_to_timepoint = {**{i:0 for i in range(13)}, **{i:1 for i in range(13,25)}, **{i:2 for i in range(25,37)}}
-    data["timepoint"] = data.Block.map(block_to_timepoint)
+    data["timepoint"] = data.block.map(block_to_timepoint)
     data = data.merge(metadata[['ptid','timepoint','guspec']], on=['ptid','timepoint'], how='left')
 
     # dropping merge column
@@ -63,18 +67,24 @@ def main():
     ## read glycan info ------------------------------------------------------##
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
     glyc_info = pd.read_excel(glycan_info_path)
-    glyc_info = glyc_info.rename(columns={'Sample':'s', 'M-Number':'ref_glycan'})
+    glyc_info = glyc_info.rename(columns={'Sample':'s', 'M-Number':'glycan_m_number', 'Structure':'glycan_structure'})
+
+    def replace_chars(s):
+        return s.replace("α","[alpha]").replace("β","[beta]").replace("\xa0"," ").replace('Α','A')
+
+    glyc_info.loc[glyc_info.glycan_structure.isna(),'glycan_structure'] = 'Not provided'
+    glyc_info.glycan_structure = glyc_info.glycan_structure.apply(lambda x: replace_chars(x))
 
     # merge on M-Number from glyc_info
-    tmp = data[['Name']].drop_duplicates()
-    tmp['s'] = tmp.Name.str.partition("-", expand=True)[0]
+    tmp = data[['spot_name']].drop_duplicates()
+    tmp['s'] = tmp.spot_name.str.partition("-", expand=True)[0]
     tmp.s = tmp.s.astype(int)
-    tmp['data_glycan'] = tmp.Name.str.partition("-", expand=True)[2]
+    tmp['data_glycan'] = tmp.spot_name.str.partition("-", expand=True)[2]
 
     tmp = glyc_info.merge(tmp, on='s', how='outer')
-    Name_to_glycan_m_number_map = {data:ref for (data,ref) in zip(tmp.Name, tmp.ref_glycan)}
-    data['m_number'] = data.Name.map(Name_to_glycan_m_number_map)
-    data.loc[data.Name=="038-418Sp19", "Name"] = "038-419Sp19"
+    Name_to_glycan_m_number_map = {data:ref for (data,ref) in zip(tmp.spot_name, tmp.glycan_m_number)}
+    data['glycan_m_number'] = data.spot_name.map(Name_to_glycan_m_number_map)
+    data = data.merge(glyc_info[['glycan_m_number','glycan_structure']], on='glycan_m_number', how='left')
 
     ## final pre-processing --------------------------------------------------##
     # standardize columns
@@ -99,8 +109,8 @@ def main():
         "instrument": "Innoscan 1100AL",
         "lab_software_version": " Mapix",
         "specrole": "Sample",
-        "m_number_source": "Scheif-GlycanArrayList-Final.xlsx",
-        "guspec_source": "HVTN302-PatientSample-GlycanAnalysis.xlsx"
+        "glycan_mapping_file": "Scheif-GlycanArrayList-Final.xlsx",
+        "sample_mapping_file": "HVTN302-PatientSample-GlycanAnalysis.xlsx"
     }
 
     ## standard processing ---------------------------------------------------##
@@ -135,15 +145,16 @@ def main():
         'lab_software_version',
         'assay_precision',
         'assay_details',
-        'name',
-        'm_number',
+        'spot_name',
+        'glycan_m_number',
+        'glycan_structure',
         'f488_mean',
         'b488_mean',
         'f488_mean_minus_b488_mean',
         'filter_pass',
         'block',
-        'guspec_source',
-        'm_number_source',
+        'sample_mapping_file',
+        'glycan_mapping_file',
         'input_file_name',
         'sdmc_processing_datetime',
         'sdmc_data_receipt_datetime',
