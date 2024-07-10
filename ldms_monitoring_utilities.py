@@ -7,7 +7,6 @@ from typing import List
 import sdmc_tools.constants as constants
 from yaml_handling import find_endpoints, read_yaml, get_output_path_from_yaml
 
-
 ## check if ldms has been updated today ------------------------------------- ##
 def was_ldms_updated(NETWORK: str) -> bool:
     """
@@ -237,7 +236,7 @@ def handle_affected_jobs_new(guspecs: list) -> None:
     return a list of yaml dicts corresponding to jobs that used that guspec
     """
     # pull all yaml_dicts associated with jobs
-    print("Checking to see if new (2024+) outputs affected")
+    print("Checking to see if new (2024+) outputs affected\n")
     print("Finding yamls")
     yamls = [
         f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
@@ -246,10 +245,12 @@ def handle_affected_jobs_new(guspecs: list) -> None:
     yamls = [read_yaml(p, add_path=True) for p in yamls]
     affected_job_yamls = []
     print("looping through guspecs, checking if in yamls")
+    # print(f"guspecs to loop through: {guspecs}\n")
+    # print(f"yamls to loop through: {yamls}")
     for guspec in guspecs:
         for y in yamls:
             if "guspecs" not in y.keys():
-                print("adding guspecs to yaml")
+                print("adding guspecs to yaml\n")
                 save_guspecs_to_yaml(y["yaml_path"])
                 y = read_yaml(y["yaml_path"], add_path=True)
             if guspec in y["guspecs"]:
@@ -271,7 +272,9 @@ def save_guspecs_to_yaml(yaml_path: str) -> None:
     - an output prefix(es)
     save the guspecs from the output to the yaml under key "guspecs"
     """
+    # print("reading in yaml\n")
     yaml_dict = read_yaml(yaml_path, add_path=False)
+    # print("getting output path from yaml")
     output_filepaths = get_output_path_from_yaml(yaml_dict)
     guspecs = []
     if not isinstance(output_filepaths, list):
