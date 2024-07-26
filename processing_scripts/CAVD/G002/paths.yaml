@@ -1,0 +1,3 @@
+input_data_path: "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/20240327-01/OneDrive_1_3-27-2024/Fred Hutch/Processed Data/G00259002_G_Hi.txt"
+savedir: "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/processed_data/"
+output_prefix: "CAVD_G002_Glycan_Microarray_data_processed"

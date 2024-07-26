@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 07/15/2024
+# Date: 07/24/2024
 # Purpose: For CAVD VISC: Concatenate / merge Glycan microarray data
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -103,6 +103,7 @@ def main():
 
     data.Visit = data.Visit.astype(int)
 
+    cavd_sample_list = cavd_sample_list.drop(columns=["Volume", "Volume Unit"])
     cavd_sample_list = cavd_sample_list.rename(columns = {"Subject ID": "ptid", "Study Day":"study_week"})
     cavd_sample_list['Date Drawn'] = cavd_sample_list['Date Drawn'].dt.date
 
@@ -177,8 +178,6 @@ def main():
         'blocks': 'block_group',
         'study_id': 'lab_submitted_study_id',
         'current_label': 'sample_id',
-        'volume': 'sample_volume_total',
-        'volume_unit': 'sample_volume_unit'
     })
 
     reorder = [
@@ -212,8 +211,6 @@ def main():
         'b488_mean',
         'f488_mean_minus_b488_mean',
         'filter_pass',
-        'sample_volume_total',
-        'sample_volume_unit',
         'input_file_name',
         'glycan_mapping_file',
         'lab_sample_mapping_file',
@@ -233,7 +230,7 @@ def main():
     ## save results ----------------------------------------------------------##
     savedir = "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/processed_data/"
     today = datetime.date.today().isoformat()
-    outputs.to_csv(savedir + f"DRAFT_CAVD_G002_Glycan_Microarray_data_processed_{today}.txt", sep="\t", index=False)
+    outputs.to_csv(savedir + f"CAVD_G002_Glycan_Microarray_data_processed_{today}.txt", sep="\t", index=False)
 
 if __name__=="__main__":
     main()
