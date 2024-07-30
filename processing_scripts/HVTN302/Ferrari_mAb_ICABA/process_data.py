@@ -17,9 +17,9 @@ def main():
 
     input_data = pd.read_csv(input_data_path)
     lab_metadata = pd.read_csv(input_metadata_path)
-
     lab_metadata["Antigen"] = lab_metadata.IMC_prep.str.replace(" ","_").str.split("_", expand=True)[0]
 
+    data = input_data.merge(lab_metadata, on=["sample_id", "concentration", "Antigen"], how = 'outer')
     data = data.rename(columns={
         'sample_id': 'mab_name',
         'Mock%IgG+': 'result_Mock%IgG+',
@@ -45,8 +45,24 @@ def main():
         'assay_type': ['ICABA'],
         'specrole': ['Monoclonal Antibody'],
         'result_units': ['Percent'],
+        'concentration_units': ['ug/ml'],
     }
     data = data.merge(pd.DataFrame(md), how='cross')
+
+    fname = input_data_path.split("/")[-1]
+    metadata_fname = input_metadata_path.split("/")[-1]
+    sdmc_processing_datetime = datetime.datetime.now().replace(microsecond=0).isoformat()
+    data_receipt_datetime = datetime.datetime.fromtimestamp(os.path.getmtime(input_data_path[0])).replace(microsecond=0).isoformat()
+
+    sdmc_metadata = pd.DataFrame({
+        "sdmc_processing_datetime": [sdmc_processing_datetime],
+        "sdmc_data_receipt_datetime": [data_receipt_datetime],
+        "input_file_name": [fname],
+        "input_metadata_file_name": [metadata_fname],
+        "protocol": [302],
+    })
+
+    data = data.merge(sdmc_metadata, how='cross')
 
     reorder = [
         'network',
@@ -59,6 +75,7 @@ def main():
         'instrument',
         'antigen',
         'concentration',
+        'concentration_units',
         'isotype',
         'result_mock%igg+',
         'result_%p24+igg+',
@@ -80,6 +97,8 @@ def main():
 
     mismatch = set(data.columns).symmetric_difference(reorder)
     if len(mismatch) > 0:
+        print(f"missing from reorder:  {set(data.columns).difference(reorder)}")
+        print(f"missing from reorder:  {set(reorder).difference(data.columns)}")
         raise Exception("trying to add or remove columns!")
 
     outputs = data[reorder]
