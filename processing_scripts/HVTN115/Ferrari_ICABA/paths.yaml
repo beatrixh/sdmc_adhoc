@@ -1,0 +1,5 @@
+input_data_path:
+  - '/trials/vaccine/p115/s001/qdata/Ferrari_ICABA_pass-through/Ferrari_HVTN 115_Part A_ICABA_Analysis_26AUG2024.csv'
+  - '/trials/vaccine/p115/s001/qdata/Ferrari_ICABA_pass-through/Ferrari_HVTN 115_Part A_ICABA_Metadata_26AUG2024.csv'
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/icaba/misc_files/data_processing/'
+output_prefix: 'HVTN115_ICABA_FERRARI_processed'

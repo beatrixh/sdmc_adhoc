@@ -35,7 +35,11 @@ def main():
                       how='outer'
     )
 
-    ldms = pd.read_csv(constants.LDMS_PATH_HVTN)
+    ldms = pd.read_csv(
+        constants.LDMS_PATH_HVTN,
+        usecols=constants.STANDARD_COLS,
+        dtype=constants.LDMS_DTYPE_MAP
+    )
     ldms = ldms.loc[ldms.lstudy==304.]
 
     data = data.drop(columns=["visitno", "ptid"])

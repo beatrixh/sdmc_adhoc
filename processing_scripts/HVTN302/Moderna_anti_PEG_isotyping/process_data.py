@@ -22,10 +22,14 @@ def main():
 
     input_data = input_data.rename(columns={
         'specrole':'sample_id_lab',
-        'log_titer':'result',
         'watson_run_id':'run_id'
     })
-    input_data['result_units'] = 'Log Titer'
+    def exponentiate(logtiter):
+        try:
+            return 10**float(logtiter)
+        except:
+            return logtiter
+    input_data["titer_calculated_by_sdmc"] = input_data.log_titer.apply(lambda x: exponentiate(x))
 
     # add dilution ranges
     dilution_path = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_isotyping/misc_files/dilution_ranges.xlsx'
@@ -94,8 +98,8 @@ def main():
         'dilution_range_max',
         'cutpoint',
         'sensitivity',
-        'result',
-        'result_units',
+        'log_titer',
+        'titer_calculated_by_sdmc',
         'assay_precision',
         'sample_id_lab',
         'run_id',
