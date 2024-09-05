@@ -43,9 +43,8 @@ def main():
     # from the lab: we only want the "Hi" data
     data = data.loc[data.filter_pass=="Hi"]
 
-    # NEED TO REPLACE THIS ONCE THEY UPLOAD
-    metadata_path = "/networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/HVTN302-PatientSample-GlycanAnalysis(Final Aliquot Map).csv"
-    metadata = pd.read_csv(metadata_path)
+    metadata_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/HVTN302-PatientSample-GlycanAnalysis.xlsx"
+    metadata = pd.read_excel(metadata_path)
 
     metadata.columns = [i.lower().replace(" ","_") for i in metadata.columns]
     metadata = metadata.rename(columns = {'original_id':'guspec', 'subject_id':'ptid', 'box_':'box'})
@@ -111,7 +110,7 @@ def main():
         "lab_software_version": " Mapix",
         "specrole": "Sample",
         "glycan_mapping_file": "Scheif-GlycanArrayList-Final.xlsx",
-        "sample_mapping_file": "NEED THEM TO RESUBMIT - HVTN302-PatientSample-GlycanAnalysis.xlsx"
+        "sample_mapping_file": "HVTN302-PatientSample-GlycanAnalysis.xlsx"
     }
 
     ## standard processing ---------------------------------------------------##
@@ -171,7 +170,7 @@ def main():
     ## save results ----------------------------------------------------------##
     today = datetime.date.today().isoformat()
     fname = f"DRAFT_HVTN302_IgE_glycan_data_processed_{today}.txt"
-    savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/IgE/misc_files/data_processing/"
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/IgE"
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
     # manifest comparison ----------------------------------------------------##
