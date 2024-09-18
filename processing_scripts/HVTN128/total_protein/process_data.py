@@ -69,6 +69,9 @@ def main():
 
     ## ---------------------------------------------------------------------------##
 def pivot():
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN128/assays/total_protein/misc_files/data_processing/"
+    outputs = pd.read_csv(savedir + "DRAFT_HVTN128_total_protein_processed_2024-09-16.txt", sep="\t")
+
     summary = pd.pivot_table(outputs,
                              index=['ptid','visitno'],
                              columns='spectype',
@@ -87,6 +90,14 @@ def pivot():
                             )['concentration']
     summary2.to_excel(savedir + "HVTN128_total_protein_sample_summary_by_dataset.xlsx")
 
+    new_data_summary = pd.pivot_table(outputs.loc[outputs.input_file_name=="HVTN128_Total_Protein_SER_20240912_A.csv"],
+                                      index=['ptid'],
+                                      columns=['spectype','visitno'],
+                                      aggfunc='count',
+                                      fill_value=0
+                                      )['concentration']
+    new_data_summary.to_excel(savedir + "HVTN128_total_protein_serum_sample_summary.xlsx")
+    
     ## Checks --------------------------------------------------------------------##
 def checks():
     manifest = pd.read_excel("/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN128/assays/smc/manifests/Precision_HVTN_128_GT_28SEP22_1342.xlsx")
