@@ -1,4 +1,6 @@
-input_data_path: /trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-01-02.csv
+input_data_path:
+  - "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-10-11.csv"
+  - "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-09-23.csv"
 savedir: /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/data_processing/
 output_prefix:
 - CoVPN3008_Ferrari_SECABA_processed

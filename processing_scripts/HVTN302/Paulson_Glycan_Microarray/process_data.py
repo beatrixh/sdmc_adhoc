@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import os
 import datetime
-import sdmc_tools.refactor_process as sdmc
+import sdmc_tools.process as sdmc
 import sdmc_tools.constants as constants
 
 ## ---------------------------------------------------------------------------##
@@ -95,7 +95,6 @@ def main():
     ## read in ldms ----------------------------------------------------------##
     ldms = pd.read_csv(constants.LDMS_PATH_HVTN, usecols=constants.STANDARD_COLS, dtype=constants.LDMS_DTYPE_MAP)
     ldms = ldms.loc[ldms.lstudy==302.]
-    ldms = ldms.loc[ldms.guspec.isin(data.guspec)]
 
     ## hand-entered data -----------------------------------------------------##
     metadata_dict = {
@@ -112,7 +111,7 @@ def main():
         "sample_mapping_file": "HVTN302-PatientSample-GlycanAnalysis.xlsx"
     }
 
-    ## IgE -----------------------------------------------------------------------##
+    ## IgE -------------------------------------------------------------------##
     ige_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/'
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/HVTN302-PatientSample-GlycanAnalysis.xlsx"
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
@@ -132,7 +131,7 @@ def main():
         ldms=ldms.loc[ldms.guspec.isin(ige.guspec)]
     )
 
-    ## IgG -----------------------------------------------------------------------##
+    ## IgG -------------------------------------------------------------------##
     igg_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/lab_processed_data/'
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/lab_processed_data/metadata/HVTN302-PatientSample-GlycanAnalysis.xlsx"
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
@@ -152,9 +151,29 @@ def main():
         ldms=ldms.loc[ldms.guspec.isin(igg.guspec)]
     )
 
-    ## combine all ---------------------------------------------------------------##
+    ## IgM -------------------------------------------------------------------##
+    igm_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/'
+    sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
+    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
-    outputs = pd.concat([ige_outputs, igg_outputs])
+    igm = pull_and_merge_inputs(igm_datadir, 635, sample_mapping_path, glycan_info_path)
+    igm['isotype'] = 'IgM'
+
+    files = os.listdir(igg_datadir)
+    files = [f for f in files if f[-3:]=="txt"]
+
+    igm_outputs = sdmc.standard_processing(
+        input_data=igm.drop(columns='ptid'),
+        input_data_path=igm_datadir + files[0],
+        guspec_col="guspec",
+        network="HVTN",
+        metadata_dict=metadata_dict,
+        ldms=ldms.loc[ldms.guspec.isin(igm.guspec)]
+    )
+
+    ## combine all -----------------------------------------------------------##
+
+    outputs = pd.concat([ige_outputs, igg_outputs, igm_outputs])
 
     outputs = outputs.drop(columns="input_file_name")
     outputs = outputs.rename(columns={"filename":"input_file_name"})
@@ -202,14 +221,14 @@ def main():
 
     ## save ----------------------------------------------------------------------##
     today = datetime.date.today().isoformat()
-    fname = f"DRAFT_HVTN302_IgG_IgE_Glycan_Data_Processed_{today}.txt"
+    fname = f"DRAFT_HVTN302_Glycan_Data_Processed_{today}.txt"
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/"
 
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
 def pivot():
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/"
-    output_prefix = 'HVTN302_IgG_IgE_Glycan_Data_Processed'
+    output_prefix = 'HVTN302_Glycan_Data_Processed'
     fpath = [i for i in os.listdir(savedir) if output_prefix in i][-1]
 
     output = pd.read_csv(fpath, sep="\t")
@@ -227,9 +246,9 @@ def pivot():
                             columns=['isotype','glycan_m_number'],
                             aggfunc='count'
                             )
-    guspec_by_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_guspec_isotype_glycan_summary_count.xlsx")
-    ptid_visit_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_ptid_visitno_isotype_glycan_summary_count.xlsx")
+    guspec_by_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_guspec_summary_count.xlsx")
+    ptid_visit_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_ptid_visitno_summary_count.xlsx")
 
 if __name__=="__main__":
     main()
-    # pivot()
+    pivot()

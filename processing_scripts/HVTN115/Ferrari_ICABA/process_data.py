@@ -22,17 +22,6 @@ def main():
     )
     ldms = ldms.loc[ldms.lstudy==115.]
 
-    # metadata ---------------------------------------------------------------##
-    md = {
-        'network': 'HVTN',
-        'upload_lab_id': 'GF',
-        'assay_lab_name': 'Ferrari Lab',
-        'instrument': 'Fortessa Flow Cytometer',
-        'assay_type': 'ICABA',
-        'specrole': 'Sample',
-        'result_units': 'Percent',
-    }
-
     # process Part A (August 2024 data) --------------------------------------##
     # input data path
     input_data_path = '/trials/vaccine/p115/s001/qdata/Ferrari_ICABA_pass-through/Ferrari_HVTN 115_Part A_ICABA_Analysis_26AUG2024.csv'
@@ -66,6 +55,16 @@ def main():
     partA = partA.drop(columns=['ptid', 'visit'])
 
     partA['antigen'] = partA.imc_prep.str.split(" ", expand=True)[0]
+
+    md = {
+        'network': 'HVTN',
+        'upload_lab_id': 'GF',
+        'assay_lab_name': 'Ferrari Lab',
+        'instrument': 'Fortessa Flow Cytometer',
+        'assay_type': 'ICABA',
+        'specrole': 'Sample',
+        'result_units': 'Percent',
+    }
 
     partA_outputs = sdmc.standard_processing(
         input_data=partA,
@@ -103,15 +102,30 @@ def main():
         'xml_file_name': 'lab_xml_file_name',
     })
 
+    b_md = {
+        'network': 'HVTN',
+        'upload_lab_id': 'GF',
+        'assay_lab_name': 'Ferrari Lab',
+        'instrument': 'Fortessa Flow Cytometer',
+        'assay_type': 'ICABA',
+        'specrole': 'Sample',
+        'result_units': 'Percent',
+        'virus_stock': 'HIV CH0505s.LucR.T2A.ecto/293T/17',
+        'imc_prep': 'CH0505s_28Mar22_AZ',
+        'antigen': 'CH505',
+    }
+
     partB_outputs = sdmc.standard_processing(
         input_data=partB,
         input_data_path=partB_data_path,
         guspec_col="guspec",
         network="HVTN",
-        metadata_dict=md,
+        metadata_dict=b_md,
         ldms=ldms,
         additional_input_paths={'input_metadata_file_name': partB_metadata_path}
     )
+
+    outputs = pd.concat([partA_outputs, partB_outputs])
 
     # check mock subtraction
     mock_subtracted = outputs['result_infected_%igg+_background_subtracted'] - outputs['result_mock_%igg+_background_subtracted']

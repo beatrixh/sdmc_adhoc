@@ -103,6 +103,36 @@ def main():
     fname = f"CoVPN3008_Ferrari_SECABA_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")
 
+    ## pivot summaries
+    detail_summary = pd.pivot_table(
+        outputs,
+        index=['ptid','visitno'],
+        columns=['isotype','dilution'],
+        aggfunc='count',
+        fill_value=0,
+    )[['background_subtracted_pct_igg+']].droplevel(level=0, axis=1)
+
+    detail_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno_dilution_isotype.xlsx")
+
+    simple_summary = pd.pivot_table(
+        outputs,
+        index='ptid',
+        columns='visitno',
+        aggfunc='count',
+        fill_value=0
+    )[['background_subtracted_pct_igg+']]
+
+    simple_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno.xlsx")
+
+    ## CHECKS
+    ## TODO: MANIFEST CHECK
+
+    check = outputs['transfected_pct_igg+'] - outputs['mock_pct_igg+']
+    check[check < 0] = 0
+
+    discrepancy = np.abs(check - outputs['background_subtracted_pct_igg+']).max()
+    if discrepancy > 1e-10:
+        raise Exception("Background subtraction looks wrong")
 
 if __name__ == '__main__':
     main()
