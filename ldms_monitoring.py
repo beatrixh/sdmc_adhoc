@@ -15,8 +15,8 @@ def check_for_updates(protocols: list, network: str) -> None:
         if len(protocols)>0:
             # if there are at least two ldmss saved, delete the older ones
             save_todays_ldms(protocols, network)
-            for protocol in protocols:
-                delete_old_ldms(protocol, network)
+            # for protocol in protocols:
+                # delete_old_ldms(protocol, network)
 
         # determine if there are any updates, output corresponding alerts
         for protocol in protocols:
@@ -27,8 +27,8 @@ def check_for_updates(protocols: list, network: str) -> None:
     else:
         print(f"{network} LDMS HASN'T BEEN UPDATED TODAY\n")
 
-print(f"hvtn protocols: {hvtn_protocols}\n")
-print(f"covpn protocols: {covpn_protocols}\n")
+# print(f"hvtn protocols: {hvtn_protocols}\n")
+# print(f"covpn protocols: {covpn_protocols}\n")
 
 check_for_updates(hvtn_protocols, "HVTN")
 check_for_updates(covpn_protocols, "CoVPN")

@@ -132,24 +132,39 @@ def get_protocols_from_old_outputs() -> dict:
     return {"hvtn": list(hvtn), "covpn": list(covpn)}
 
 
+# def get_protocols_from_new_outputs() -> dict:
+#     """
+#     get a list of all applicable protocols for each network
+#     in new (2024+) outputs, and return as a dict
+#     with keys "hvtn"/"covpn"
+#     """
+#     hvtn, covpn = set(), set()
+#     yamls = [
+#         f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
+#     ]
+#     for y in yamls:
+#         yaml_dict = read_yaml(y, add_path=False)
+#         output_filepaths = get_output_path_from_yaml(yaml_dict)
+#         for path in output_filepaths:
+#             d = get_protocol_from_output(path)
+#             hvtn.update(d["hvtn"])
+#             covpn.update(d["covpn"])
+#     return {"hvtn": list(hvtn), "covpn": list(covpn)}
+
 def get_protocols_from_new_outputs() -> dict:
-    """
-    get a list of all applicable protocols for each network
-    in new (2024+) outputs, and return as a dict
-    with keys "hvtn"/"covpn"
-    """
-    hvtn, covpn = set(), set()
-    yamls = [
-        f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
-    ]
-    for y in yamls:
-        yaml_dict = read_yaml(y, add_path=False)
-        output_filepaths = get_output_path_from_yaml(yaml_dict)
-        for path in output_filepaths:
-            d = get_protocol_from_output(path)
-            hvtn.update(d["hvtn"])
-            covpn.update(d["covpn"])
-    return {"hvtn": list(hvtn), "covpn": list(covpn)}
+    hvtn, covpn = [], []
+    protocols_dir = os.path.dirname(__file__) + "/processing_scripts/"
+    all_protocols = [i.upper() for i in os.listdir(protocols_dir)]
+    for protocol in all_protocols:
+        if protocol[:4]=="HVTN":
+            number = protocol[4:].split("_")[0]
+            hvtn += [number]
+        elif protocol[:5]=="COVPN":
+            number = protocol[5:].split("_")[0]
+            covpn += [number]
+        else:
+            raise Exception(f"NON CATEGORIZEABLE PROTOCOL IN SDMC-ADHOC: {protocols_dir}")
+    return {"hvtn": list(set(hvtn)), "covpn": list(set(covpn))}
 
 if __name__=='__main__':
     yamlpath = os.path.dirname(__file__) + "/constants.yaml"

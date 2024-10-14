@@ -1,21 +1,20 @@
 hvtn_protocols:
 - 92
 - 96
+- 115
 - 128
 - 135
 - 139
 - 302
 - 303
 - 304
+- 305
 - 503
 - 703
 - 805
 covpn_protocols:
 - 3008
 OUTPUT_REGISTRY_OLD:
-- /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/CoVPN3008_FCM08_AP59_CH_20221229E01FLO_B.txt
-- /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/CoVPN3008_FCM08_AP59_CH_20221229E01FLO_C.txt
-- /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/ics/misc_files/summary_ds_2023-04-24.csv
 - /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN Auxiliary Studies/111-ANS_Maenetje_HVTN_503/draft_FCM08_output_20210616.txt
 - /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN Auxiliary Studies/Mycoplasma/161-EXS_Mycoplasma_Mayo_HVTN_092_096/sdmc_output/161EXS_Mycoplasma_Mayo_HVTN_092_096_20190312.txt
 - /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN Auxiliary Studies/Mycoplasma/161-EXS_Mycoplasma_Mayo_HVTN_092_096/sdmc_output/161EXS_Mycoplasma_Mayo_HVTN_092_096_20190313.txt

@@ -72,7 +72,7 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str) -> None:
 
         savepath = ldms_feed_path + f"/{NETWORK.lower()}.ldms{int(protocol)}.{timestamp}.csv"
         if not os.path.exists(savepath):
-            print(f"CREATING THE FOLLOWING: {savepath}")
+            # print(f"CREATING THE FOLLOWING: {savepath}")
             ldms.loc[ldms.lstudy==protocol].to_csv(savepath, index=False)
         else:
             print(f"{savepath} already exists")
@@ -88,7 +88,7 @@ def delete_old_ldms(PROTOCOL: str, NETWORK: str) -> None:
 
     # delete all but the two most recent
     for file in applicable_things_in_dir[:-2]:
-        print(f"DELETING THE FOLLOWING: {file}\n")
+        # print(f"DELETING THE FOLLOWING: {file}\n")
         os.remove(feed_dir + file)
 
 ## detect_ldms_diffs -------------------------------------------------------- ##
@@ -99,7 +99,7 @@ def detect_ldms_diffs(PROTOCOL: str, NETWORK: str) -> None:
         - network (HVTN or COVPN) associated with protocol
     FUNCTION: determines if yesterday / todays ldms has updates in any of the columns we're interested in
     """
-    print(f"\n{NETWORK}{PROTOCOL}: Reading in data")
+    # print(f"\n{NETWORK}{PROTOCOL}: Reading in data")
     old, new = get_ldms_subset(PROTOCOL, NETWORK)
 
     # if either of these are empty, we have nothing to compare ----------------#
@@ -107,26 +107,26 @@ def detect_ldms_diffs(PROTOCOL: str, NETWORK: str) -> None:
         return
 
     # the columns have to match -- otherwise have big problems ----------------#
-    print(f"{NETWORK}{PROTOCOL}: Checking for col diff")
+    # print(f"{NETWORK}{PROTOCOL}: Checking for col diff")
     COL_DIFF = set(old.columns).symmetric_difference(new.columns)
     if len(COL_DIFF) > 0:
-        print(f"COLUMNS DON'T MATCH. THE FOLLOWING NOT SHARED: {COL_DIFF}")
+        print(f"{NETWORK}{PROTOCOL}: COLUMNS DON'T MATCH. THE FOLLOWING NOT SHARED: {COL_DIFF}")
         return
 
     # do we have the same set of guspecs --------------------------------------#
     guspecs_removed = set(old.guspec).difference(new.guspec)
     if guspecs_removed:
-        print(f"THE FOLLOWING GUSPECS HAVE BEEN REMOVED FROM LDMS: {guspecs_removed}")
+        print(f"{NETWORK}{PROTOCOL}: THE FOLLOWING GUSPECS HAVE BEEN REMOVED FROM LDMS: {guspecs_removed}")
         handle_affected_jobs(guspecs_removed)
     guspecs_added = set(new.guspec).difference(old.guspec)
     if guspecs_added:
         print(f"THE FOLLOWING GUSPECS HAVE BEEN ADDED TO LDMS {guspecs_added}")
         handle_affected_jobs(guspecs_added)
-    if not guspecs_removed and not guspecs_added:
-        print(f"{NETWORK}{PROTOCOL}: No guspecs added or removed")
+    # if not guspecs_removed and not guspecs_added:
+        # print(f"{NETWORK}{PROTOCOL}: No guspecs added or removed")
 
     # investigate all rows with shared guspec----------------------------------#
-    print(f"{NETWORK}{PROTOCOL}: Comparing all rows with shared guspecs")
+    # print(f"{NETWORK}{PROTOCOL}: Comparing all rows with shared guspecs")
     shared_guspecs = set(old.guspec).intersection(new.guspec)
 
     new = new.loc[new.guspec.isin(shared_guspecs)].drop_duplicates()
@@ -154,12 +154,12 @@ def detect_ldms_diffs(PROTOCOL: str, NETWORK: str) -> None:
         GUSPEC_MATCHES = list(comp.loc[comp.count_x==comp.count_y].index)
         new = new.loc[new.guspec.isin(GUSPEC_MATCHES)]
         old = old.loc[old.guspec.isin(GUSPEC_MATCHES)]
-    else:
-        print("For shared guspecs, we have the exact count of each guspec")
+    # else:
+    #     print("For shared guspecs, we have the exact count of each guspec")
 
     # report on guspecs with matching row counts ------------------------------#
-    print("comparing rows with shared guspec / guspec count:")
-    print(f"{NETWORK}{PROTOCOL}: Sorting dataframes")
+    # print("comparing rows with shared guspec / guspec count:")
+    # print(f"{NETWORK}{PROTOCOL}: Sorting dataframes")
 
     old = old.sort_values(
         by=['guspec','txtpid', 'drawdm', 'drawdd', 'drawdy', 'vidval',
@@ -173,15 +173,15 @@ def detect_ldms_diffs(PROTOCOL: str, NETWORK: str) -> None:
     )
 
     # catch any rows that have mismatch
-    print(f"{NETWORK}{PROTOCOL}: Storing dataframe diff")
+    # print(f"{NETWORK}{PROTOCOL}: Storing dataframe diff")
     diff = new.compare(old)
     if len(diff) > 0:
         print(f"CHANGES DETECTED IN SHARED GUSPECS")
         AFFECTED_GUSPECS = list(new.iloc[diff.index].guspec.unique())
         print(f"AFFECTED GUSPECS: {AFFECTED_GUSPECS}")
         handle_affected_jobs(AFFECTED_GUSPECS)
-    else:
-        print(f"NO DIFF DETECTED FOR {NETWORK}{PROTOCOL}")
+    # else:
+    #     print(f"NO DIFF DETECTED FOR {NETWORK}{PROTOCOL}")
 
 
 # helpers for detect_ldms_diffs ----------------------------------------------##
@@ -202,7 +202,7 @@ def get_ldms_subset(PROTOCOL: str, NETWORK: str) -> tuple[pd.DataFrame, pd.DataF
         if len(files) > 1:
             prev_fname = np.sort(os.listdir(feed_dir))[-2]
             old = pd.read_csv(feed_dir + prev_fname, dtype=constants.LDMS_DTYPE_MAP)
-            print(f"{NETWORK}{PROTOCOL}: Comparing {fname} and {prev_fname}")
+            # print(f"{NETWORK}{PROTOCOL}: Comparing {fname} and {prev_fname}")
         else:
             print(f"NO PRIOR LDMS SAVED FOR {NETWORK}{PROTOCOL}")
             old = pd.DataFrame()
@@ -237,14 +237,14 @@ def handle_affected_jobs_new(guspecs: list) -> None:
     """
     # pull all yaml_dicts associated with jobs
     print("Checking to see if new (2024+) outputs affected\n")
-    print("Finding yamls")
+    # print("Finding yamls")
     yamls = [
         f for f in find_endpoints('/home/bhaddock/repos/sdmc-adhoc/processing_scripts', l=[]) if f.split("/")[-1]=="paths.yaml"
     ]
-    print("yamls obtained")
+    # print("yamls obtained")
     yamls = [read_yaml(p, add_path=True) for p in yamls]
     affected_job_yamls = []
-    print("looping through guspecs, checking if in yamls")
+    # print("looping through guspecs, checking if in yamls")
     # print(f"guspecs to loop through: {guspecs}\n")
     # print(f"yamls to loop through: {yamls}")
     for guspec in guspecs:
@@ -257,7 +257,7 @@ def handle_affected_jobs_new(guspecs: list) -> None:
                 print(f"found guspec in an output: {guspec}")
                 affected_job_yamls += [y]
     if len(affected_job_yamls) > 0:
-        print("NEW OUTPUTS AFFECTED")
+        print("\nNEW OUTPUTS AFFECTED")
         for y in affected_job_yamls:
             output_path = get_output_path_from_yaml(y)
             print(f"The following output file affected: {output_path}")
@@ -286,7 +286,8 @@ def save_guspecs_to_yaml(yaml_path: str) -> None:
             data = pd.read_csv(path)
         else:
             raise Exception(f"PUT EXCEPTION HERE; FILEPATH {path} WRONG")
-        guspecs += data.guspec.tolist()
+        if 'guspec' in data.columns:
+            guspecs += data.guspec.tolist()
     yaml_dict['guspecs'] = list(set(guspecs))
     with open(yaml_path, 'w') as outfile:
         yaml.dump(yaml_dict, outfile, default_flow_style=False, sort_keys=False)
