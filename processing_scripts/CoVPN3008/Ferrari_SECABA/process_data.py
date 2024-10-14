@@ -125,14 +125,25 @@ def main():
     simple_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno.xlsx")
 
     ## CHECKS
-    ## TODO: MANIFEST CHECK
-
     check = outputs['transfected_pct_igg+'] - outputs['mock_pct_igg+']
     check[check < 0] = 0
 
     discrepancy = np.abs(check - outputs['background_subtracted_pct_igg+']).max()
     if discrepancy > 1e-10:
         raise Exception("Background subtraction looks wrong")
+
+    # verify manifest is a match
+    manifest_path = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/CoVPN_shipping_manifest.txt"
+    manifest = pd.read_csv(manifest_path, sep="\t")
+
+    manifest_path2 = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/CoVPN_shipping_manifest_pt2.txt"
+    manifest2 = pd.read_csv(manifest_path2, sep="\t")
+
+    manifest_ids = set(manifest2.loc[manifest2.PROTOCOL==3008.].GLOBAL_ID).union(manifest.GLOBAL_ID)
+
+    check = manifest_ids.symmetric_difference(outputs.guspec)
+    if len(check) > 0:
+        raise Exception("Samples don't match manifest")
 
 if __name__ == '__main__':
     main()
