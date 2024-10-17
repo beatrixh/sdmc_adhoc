@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 09/13/2024
+# Date: 10/16/2024
 # Purpose: For CAVD VISC: Concatenate / merge Glycan microarray data
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -32,6 +32,23 @@ def main():
         data = data.loc[~data.spot_name.isin(["empty","Empty","DyeSpot"]),usecols]
         return data
 
+    ## IgM ##
+    parentdir = "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/20241011-01/"
+    igm = pd.DataFrame()
+    for site in os.listdir(parentdir):
+        if os.path.isdir(parentdir + site):
+            datadir = parentdir + site + "/ProcessedData/"
+            files = os.listdir(datadir)
+            files = [f for f in files if f[-3:]=="txt"]
+            sub = pd.DataFrame()
+            for file in files:
+                sub = pd.concat([sub, get_data(datadir + file, 488)])
+            sub["site"] = site
+            igm = pd.concat([igm, sub])
+    igm = igm.loc[igm.filter_pass=="Hi"]
+    igm['isotype'] = 'IgM'
+    igm['background_subtraced_mean_signal'] = igm['mean_signal'] - igm['mean_background_signal']
+    igm.site = igm.site.map({'Emory': 'Emory', 'FH': 'Fred Hutch', 'GW': 'George Washington', 'UT': 'University of Texas'})
 
     ## IgE ##
     parentdir = "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/20240903-01/"
@@ -109,6 +126,25 @@ def main():
 
         return data
 
+    ## IgM ##
+    igm_visitno_metadata_path = '/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/20241011-01/IAVI-G002_ArrayDataKey.xlsx'
+    igm_visitno_df = pd.read_excel(igm_visitno_metadata_path)
+    igm_visitno_df = igm_visitno_df.drop(columns=[
+        'Filename (IgG)',
+        'Blocks',
+        'Filename (IgE)',
+        'Blocks.1',
+        'Unnamed: 14'
+    ])
+    igm_visitno_df = igm_visitno_df.dropna(axis=1)
+    igm_visitno_df = igm_visitno_df.rename(columns={
+        'Filename (IgM)': 'Filename',
+        'Blocks.2': 'Blocks'
+    })
+
+    igm2 = merge_on_visitno(igm, igm_visitno_df)
+    igm2 = igm2.drop(columns = ['Origin', 'PTID', 'Study Week'])
+
     ## IgG ##
     igg_visitno_metadata_path = '/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/IAVI-G002_ArrayDataKey_19Jul2024.xlsx'
     igg_visitno_df = pd.read_excel(igg_visitno_metadata_path)
@@ -149,6 +185,9 @@ def main():
             raise Exception("There should be 6 rows per unique sample/spot_name/block!")
         return data
 
+    ## IgM ##
+    igm3 = merge_on_sample_identifier(igm2, cavd_sample_list_path)
+
     ## IgG ##
     igg3 = merge_on_sample_identifier(igg2, cavd_sample_list_path)
 
@@ -174,6 +213,7 @@ def main():
 
     compare_metadata(cavd_sample_list_path, igg_visitno_metadata_path)
     compare_metadata(cavd_sample_list_path, ige_visitno_metadata_path)
+    compare_metadata(cavd_sample_list_path, igm_visitno_metadata_path)
 
     ## merge on glycan metadata ----------------------------------------------##
     glycan_info_path = "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/Scheif-GlycanArrayList-Final.xlsx"
@@ -202,6 +242,9 @@ def main():
         data.columns = [i.lower().replace(" ","_") for i in data.columns]
         return data
 
+    ## IgM ##
+    igm4 = merge_on_glycan_info(igm3, glycan_info_path)
+
     ## IgG ##
     igg4 = merge_on_glycan_info(igg3, glycan_info_path)
 
@@ -211,6 +254,25 @@ def main():
     ## standard processing ---------------------------------------------------##
     ## merge on metadata ##
     fred_hutch_processing_timestamp = datetime.datetime.now().replace(microsecond=0).isoformat()
+
+    metadata_dict = {
+        "network": ["HVTN"],
+        "upload_lab_id": ["P4"],
+        "assay_lab_name": ["Paulson (Scripps)"],
+        "assay_type": ["Glycan Microarray"],
+        "assay_precision": ["Semi-Quantitative"],
+        "assay_details":["Custom glycan layout"],
+        "instrument": ["Innoscan 1100AL"],
+        "lab_software_version": ["Mapix"],
+        "specrole": ["Sample"],
+        "glycan_mapping_file": ["Scheif-GlycanArrayList-Final.xlsx"],
+        "lab_sample_mapping_file": [igm_visitno_metadata_path.split("/")[-1]],
+        "cavd_sample_mapping_file": ["Skin AE sample testing.xlsx"],
+        "fred_hutch_processing_timestamp": [fred_hutch_processing_timestamp],
+        "network": "CAVD",
+    }
+
+    igm5 = igm4.merge(pd.DataFrame(metadata_dict), how='cross')
 
     metadata_dict = {
         "network": ["HVTN"],
@@ -250,7 +312,7 @@ def main():
     ige5 = ige4.merge(pd.DataFrame(metadata_dict), how='cross')
 
     ## standard formatting ##
-    data = pd.concat([igg5, ige5])
+    data = pd.concat([igg5, ige5, igm5])
 
     data.columns = [i.lower().replace(" ","_") for i in data.columns]
 
