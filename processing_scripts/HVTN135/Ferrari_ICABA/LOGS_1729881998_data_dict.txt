@@ -1,0 +1,27 @@
+The following vars have been added the the data dictionary; their values need to be added manually:
+- input_data_path:
+
+Note that the following standard vars are not in the dataset; consider adding:
+- assay_subtype
+- assay_type
+- spec_additive
+- specrole
+- guspec
+- instrument_serialno
+- result_units
+- network
+- visitno
+- sdmc_processing_datetime
+- input_file_name
+- spec_primary
+- protocol
+- ptid
+- assay_lab_name
+- sdmc_data_receipt_datetime
+- lab_software_version
+- assay_details
+- upload_lab_id
+- spec_derivative
+- spectype
+- drawdt
+- instrument
