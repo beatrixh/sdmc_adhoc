@@ -1,0 +1,5 @@
+input_data_path:
+  - '/trials/vaccine/p405/s001/qdata/Ferrari/Ferrari_HVTN405_Transfected_cell_degranulation_analysis_2021-09-15.csv'
+  - '/trials/vaccine/p405/s001/qdata/Ferrari/Ferrari_HVTN405_Transfected_cell_degranulation_metadata_2021-09-15.csv'
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN405_HPTN1901/assays/tranfected_cell_cd107a_degranulation/misc_files/data_processing/'
+output_prefix: HVTN405_Ferrari_ADCC_Degranulation_processed
