@@ -1,0 +1,5 @@
+input_data_path:
+  - "/trials/covpn/p5001/s001/qdata/LabData/Ferrari_pass-through/Ferrari_CoVPN5001_Transfected Cell Degranulation_Analysis_2022-11-15.csv"
+  - "/trials/covpn/p5001/s001/qdata/LabData/Ferrari_pass-through/Ferrari_CoVPN5001_Transfected Cell Degranulation_Metadata_2023-01-17.csv"
+savedir: "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/transfected_degranulation/misc_files/data_processing/"
+output_prefix: "CoVPN5001_Ferrari_Transfected_Degranulation_processed"
