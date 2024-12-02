@@ -78,7 +78,7 @@ def main():
     if visit_diff > 0:
         raise Warning("Lab-submitted visitno doesn't match ldms")
 
-    outputs = outputs.drop(columns=['visit_compare','ptid_compare'])
+    outputs = outputs.drop(columns=['visit_compare','ptid_compare','infected/transfected'])
 
     reorder = [
         'network',
@@ -97,7 +97,6 @@ def main():
         'assay_type',
         'assay_subtype',
         'assay_details',
-        'infected/transfected',
         'instrument',
         'dilution',
         'result_infected_pct_cd107a+_nk_cells',
@@ -120,7 +119,7 @@ def main():
         raise Exception("Trying to add or remove columns")
     outputs = outputs[reorder]
 
-    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/transfected_degranulation/misc_files/data_processing/"
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/data_processing/transfected_degranulation/"
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     fname = f"CoVPN5001_Ferrari_Transfected_Degranulation_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")

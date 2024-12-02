@@ -117,13 +117,36 @@ def main():
 
     outputs = outputs[reorder]
 
-    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/SECABA/misc_files/data_processing/"
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/data_processing/SECABA/"
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     fname = f"CoVPN5001_Ferrari_SECABA_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")
 
     summary = pd.pivot_table(outputs, index=['ptid'], columns=['dilution','visitno'], aggfunc='count', fill_value=0)['result_background_subtracted_pct_cd107a+_nk_cells']
     summary.to_excel(savedir + "CoVPN5001_SECABA_data_summary.xlsx")
+
+    ## check for completeness agasint manifest
+    most_samples_path = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/512-388-2021000250.txt"
+    most_samples = pd.read_csv(most_samples_path, sep="\t")
+
+    duke_samples_path = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/512-388-2021000247.txt"
+    duke_samples = pd.read_csv(duke_samples_path, sep="\t")
+
+    most_samples.columns = [i.lower() for i in most_samples.columns]
+    duke_samples.columns = [i.lower() for i in duke_samples.columns]
+
+    most_samples_list = set(most_samples.global_id).difference(outputs.guspec)
+    if len(most_samples_list)==0:
+        print("All samples in 512-388-2021000250.txt are in outputs")
+
+    not_accounted_for = set(outputs.guspec).difference(most_samples.global_id)
+    if len(not_accounted_for) > 0:
+        print(f"These samples aren't accounted for in that original manifest: {not_accounted_for}")
+
+        duke_overlap = not_accounted_for.difference(duke_samples.global_id)
+        if len(duke_overlap) == 0:
+            print(f"The remaining samples not in the original manifest seem to be in this manifest sent to Duke (512-388-2021000247.txt). They must have shared them with the Ferrari Lab")
+
 
 if __name__=="__main__":
     main()

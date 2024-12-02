@@ -1,0 +1,6 @@
+input_data_path:
+  - '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/MGPRX2/HVTN302 MRGPRX2 Run-#1-#2-S.xlsx'
+  - '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/MGPRX2/Summary IHVTN samples MRGPRX2.xlsx'
+  - '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/MRGPRX2/misc_files/confirm_sample_mapping_2024_12_02.xlsx'
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/MRGPRX2/misc_files/data_processing/'
+output_prefix: 'HVTN302_Saini_JHMI_MRGPRX2_Processed'

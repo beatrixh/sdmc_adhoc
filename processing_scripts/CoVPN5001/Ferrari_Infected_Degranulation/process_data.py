@@ -78,7 +78,7 @@ def main():
     if visit_diff > 0:
         raise Warning("Lab-submitted visitno doesn't match ldms")
 
-    outputs = outputs.drop(columns=['visit_compare','ptid_compare'])
+    outputs = outputs.drop(columns=['visit_compare','ptid_compare','infected/transfected'])
 
     check = outputs['result_infected_pct_cd107a+_nk_cells'] - outputs['result_mock_pct_cd107a+_nk_cells']
     check[check < 0] = 0
@@ -104,7 +104,6 @@ def main():
         'assay_type',
         'assay_subtype',
         'assay_details',
-        'infected/transfected',
         'instrument',
         'dilution',
         'result_infected_pct_cd107a+_nk_cells',
@@ -128,7 +127,7 @@ def main():
 
     outputs = outputs[reorder]
 
-    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/infected_degranulation/misc_files/data_processing/"
+    savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/data_processing/infected_degranulation"
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     fname = f"CoVPN5001_Ferrari_Infected_Degranulation_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")

@@ -3,7 +3,7 @@ input_data_path:
   Cell Degranulation_Analysis_2022-03-23.csv
 - /trials/covpn/p5001/s001/qdata/LabData/Ferrari_pass-through/Ferrari_CoVPN5001_Infected
   Cell Degranultaion_Metadata_2022-03-25.csv
-savedir: /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/SECABA/misc_files/data_processing/
+savedir: /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/ADCC/misc_files/data_processing/SECABA/
 output_prefix:
 - CoVPN5001_Ferrari_SECABA_processed
 yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/CoVPN5001/Ferrari_SECABA/paths.yaml
