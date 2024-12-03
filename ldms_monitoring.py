@@ -15,8 +15,8 @@ def check_for_updates(protocols: list, network: str) -> None:
         if len(protocols)>0:
             # if there are at least two ldmss saved, delete the older ones
             save_todays_ldms(protocols, network)
-            # for protocol in protocols:
-                # delete_old_ldms(protocol, network)
+            for protocol in protocols:
+                delete_old_ldms(protocol, network)
 
         # determine if there are any updates, output corresponding alerts
         for protocol in protocols:

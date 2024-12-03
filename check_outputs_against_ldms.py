@@ -18,8 +18,10 @@ def main():
     for o in output_paths:
         try:
             check_for_changes(o)
-        except:
+        except Exception as error:
             print(f"Encountered issue with {o}")
+            print("Error Message:\n")
+            print(error)
 def get_output_path(yamlpath):
     y = read_yaml(yamlpath)
     savedir = y['savedir']
@@ -32,7 +34,11 @@ def get_output_path(yamlpath):
 def get_ldms(network, protocol):
     dirname = yamldict['PROTOCOL_DIRNAME_MAP'][network][int(protocol)]
     feeddir = f"/networks/vtn/lab/SDMC_labscience/studies/{network}/{dirname}/specimens/ldms_feed/"
-    fname = np.sort(os.listdir(feeddir))[-1]
+    files = os.listdir(feeddir)
+    files = [i for i in files if f"{network.lower()}.ldms{int(protocol)}." in i]
+    if len(files) == 0:
+        raise Exception("No LDMS seems to be saved for {network}{protocol} in {feeddir}")
+    fname = np.sort(files)[-1]
     ldms_path = feeddir + fname
     return pd.read_csv(ldms_path, dtype=constants.LDMS_DTYPE_MAP)
 

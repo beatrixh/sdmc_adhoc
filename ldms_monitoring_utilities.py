@@ -49,6 +49,13 @@ def save_todays_ldms(PROTOCOLS: List[str], NETWORK: str) -> None:
                            usecols=constants.STANDARD_COLS,
                            dtype=constants.LDMS_DTYPE_MAP
                            )
+        # for some reason 5001 is in the hvtn ldms
+        also = pd.read_csv(constants.LDMS_PATH_HVTN,
+                           usecols=constants.STANDARD_COLS,
+                           dtype=constants.LDMS_DTYPE_MAP
+                           )
+        ldms = pd.concat([ldms, also.loc[also.lstudy==5001.]])
+
     else:
         print(f"{NETWORK} IS AN INVALID NETWORK SELECTION")
     ldms = ldms.loc[ldms.lstudy.isin(PROTOCOLS)]
@@ -84,10 +91,10 @@ def delete_old_ldms(PROTOCOL: str, NETWORK: str) -> None:
     feed_dir = f"/networks/vtn/lab/SDMC_labscience/studies/{NETWORK}/{PROTOCOL_DIRNAME_MAP[NETWORK][int(PROTOCOL)]}/specimens/ldms_feed/"
     things_in_dir = os.listdir(feed_dir)
     # sort from oldest to most recent, and only take the ones that look like hvtn.ldmsPROTOCOL
-    applicable_things_in_dir = np.sort([i for i in things_in_dir if i[:N] == f'{NETWORK.lower()}.ldms{PROTOCOL}'])
+    applicable_things_in_dir = np.sort([i for i in things_in_dir if i[:N] == f'{NETWORK.lower()}.ldms{PROTOCOL}'])[::-1]
 
-    # delete all but the two most recent
-    for file in applicable_things_in_dir[:-2]:
+    # delete all but the thirty most recent
+    for file in applicable_things_in_dir[30:]:
         # print(f"DELETING THE FOLLOWING: {file}\n")
         os.remove(feed_dir + file)
 
@@ -200,7 +207,9 @@ def get_ldms_subset(PROTOCOL: str, NETWORK: str) -> tuple[pd.DataFrame, pd.DataF
         new = pd.read_csv(feed_dir + fname, dtype=constants.LDMS_DTYPE_MAP)
         files = os.listdir(feed_dir)
         if len(files) > 1:
-            prev_fname = np.sort(os.listdir(feed_dir))[-2]
+            files = os.listdir(feed_dir)
+            files = [i for i in files if f'{NETWORK.lower()}.ldms{PROTOCOL}' in i]
+            prev_fname = np.sort(files)[-2]
             old = pd.read_csv(feed_dir + prev_fname, dtype=constants.LDMS_DTYPE_MAP)
             # print(f"{NETWORK}{PROTOCOL}: Comparing {fname} and {prev_fname}")
         else:
@@ -260,8 +269,8 @@ def handle_affected_jobs_new(guspecs: list) -> None:
         print("\nNEW OUTPUTS AFFECTED")
         for y in affected_job_yamls:
             output_path = get_output_path_from_yaml(y)
-            print(f"The following output file affected: {output_path}")
-            rerun_affected_job(y)
+            print(f"! The following output file affected: {output_path}")
+            # rerun_affected_job(y)
     else:
         print("\nNO NEW (2024+) OUTPUTS AFFECTED")
 

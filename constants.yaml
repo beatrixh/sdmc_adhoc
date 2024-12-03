@@ -9,11 +9,14 @@ hvtn_protocols:
 - 303
 - 304
 - 305
+- 405
 - 503
 - 703
+- 704
 - 805
 covpn_protocols:
 - 3008
+- 5001
 OUTPUT_REGISTRY_OLD:
 - /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN Auxiliary Studies/111-ANS_Maenetje_HVTN_503/draft_FCM08_output_20210616.txt
 - /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN Auxiliary Studies/Mycoplasma/161-EXS_Mycoplasma_Mayo_HVTN_092_096/sdmc_output/161EXS_Mycoplasma_Mayo_HVTN_092_096_20190312.txt
@@ -92,7 +95,7 @@ PROTOCOL_DIRNAME_MAP:
     605: HVTN605
     702: HVTN702
     703: HVTN703_704
-    704: HVTN704
+    704: HVTN703_704
     705: HVTN705
     706: HVTN706
     804: HVTN804_HPTN095
