@@ -32,15 +32,15 @@ def get_data(path, channel):
     return data
 
 
-def pull_and_merge_inputs(datadir, channel, sample_mapping_path, glycan_info_path):
+def pull_and_merge_inputs(datadir, channel, sample_mapping_path, glycan_info_path, filter_pass):
     data = pd.DataFrame()
     files = os.listdir(datadir)
     files = [f for f in files if f[-3:]=="txt"]
     for file in files:
         data = pd.concat([data, get_data(datadir + file, channel)])
 
-    # from the lab: we only want the "Hi" data
-    data = data.loc[data.filter_pass=="Hi"]
+    # from the lab: we only want the "Hi" data for IgG/IgE, "Lo" for IgM
+    data = data.loc[data.filter_pass==filter_pass]
 
     metadata = pd.read_excel(sample_mapping_path)
     metadata.columns = [i.lower().replace(" ","_") for i in metadata.columns]
@@ -62,7 +62,7 @@ def pull_and_merge_inputs(datadir, channel, sample_mapping_path, glycan_info_pat
     # dropping rows for which don't have data
     data = data.loc[data.guspec.notna()]
 
-    ## read glycan info ------------------------------------------------------##
+    # ## read glycan info ------------------------------------------------------##
     glyc_info = pd.read_excel(glycan_info_path)
     glyc_info = glyc_info.rename(columns={'Sample':'s', 'M-Number':'glycan_m_number', 'Structure':'glycan_structure'})
 
@@ -116,7 +116,7 @@ def main():
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/HVTN302-PatientSample-GlycanAnalysis.xlsx"
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
-    ige = pull_and_merge_inputs(ige_datadir, 532, sample_mapping_path, glycan_info_path)
+    ige = pull_and_merge_inputs(ige_datadir, 532, sample_mapping_path, glycan_info_path, "Hi")
     ige['isotype'] = 'IgE'
 
     files = os.listdir(ige_datadir)
@@ -136,7 +136,7 @@ def main():
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/lab_processed_data/metadata/HVTN302-PatientSample-GlycanAnalysis.xlsx"
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
-    igg = pull_and_merge_inputs(igg_datadir, 488, sample_mapping_path, glycan_info_path)
+    igg = pull_and_merge_inputs(igg_datadir, 488, sample_mapping_path, glycan_info_path, "Hi")
     igg['isotype'] = 'IgG'
 
     files = os.listdir(igg_datadir)
@@ -151,29 +151,49 @@ def main():
         ldms=ldms.loc[ldms.guspec.isin(igg.guspec)]
     )
 
-    ## IgM -------------------------------------------------------------------##
-    igm_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/'
+    ## IgM old -------------------------------------------------------------------##
+    igm_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/10_01_2024/'
     sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
-    igm = pull_and_merge_inputs(igm_datadir, 635, sample_mapping_path, glycan_info_path)
+    igm = pull_and_merge_inputs(igm_datadir, 488, sample_mapping_path, glycan_info_path, "Lo")
     igm['isotype'] = 'IgM'
 
-    files = os.listdir(igg_datadir)
+    files = os.listdir(igm_datadir)
     files = [f for f in files if f[-3:]=="txt"]
 
     igm_outputs = sdmc.standard_processing(
-        input_data=igm.drop(columns='ptid'),
-        input_data_path=igm_datadir + files[0],
-        guspec_col="guspec",
-        network="HVTN",
-        metadata_dict=metadata_dict,
-        ldms=ldms.loc[ldms.guspec.isin(igm.guspec)]
+            input_data=igm.drop(columns='ptid'),
+            input_data_path=igm_datadir + files[0],
+            guspec_col="guspec",
+            network="HVTN",
+            metadata_dict=metadata_dict,
+            ldms=ldms.loc[ldms.guspec.isin(igm.guspec)]
+    )
+
+    ## IgM new -------------------------------------------------------------------##
+    igm_datadir_new = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/11_25_2024/'
+    sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
+    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
+
+    igm_new = pull_and_merge_inputs(igm_datadir_new, 488, sample_mapping_path, glycan_info_path, "Lo")
+    igm_new['isotype'] = 'IgM'
+
+    files = os.listdir(igm_datadir_new)
+    files = [f for f in files if f[-3:]=="txt"]
+
+    igm_new_outputs = sdmc.standard_processing(
+            input_data=igm_new.drop(columns='ptid'),
+            input_data_path=igm_datadir_new + files[0],
+            guspec_col="guspec",
+            network="HVTN",
+            metadata_dict=metadata_dict,
+            ldms=ldms.loc[ldms.guspec.isin(igm_new.guspec)]
     )
 
     ## combine all -----------------------------------------------------------##
 
-    outputs = pd.concat([ige_outputs, igg_outputs, igm_outputs])
+    outputs = pd.concat([ige_outputs, igg_outputs, igm_outputs, igm_new_outputs])
 
     outputs = outputs.drop(columns="input_file_name")
     outputs = outputs.rename(columns={"filename":"input_file_name"})
@@ -226,29 +246,27 @@ def main():
 
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
-def pivot():
-    savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/data_processing/"
-    output_prefix = 'HVTN302_Glycan_Data_Processed'
-    fpath = [i for i in os.listdir(savedir) if output_prefix in i][-1]
-
-    output = pd.read_csv(fpath, sep="\t")
-
     guspec_by_glycan = pd.pivot_table(
                             outputs,
                             index='guspec',
                             columns=['isotype','glycan_m_number'],
                             values='background_subtraced_mean_signal',
-                            aggfunc='count'
+                            aggfunc='count',
+                            fill_value=0
                             )
     ptid_visit_glycan = pd.pivot_table(
                             outputs,
                             index=['ptid','visitno'],
                             columns=['isotype','glycan_m_number'],
-                            aggfunc='count'
+                            aggfunc='count',
+                            fill_value=0
                             )
     guspec_by_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_guspec_summary_count.xlsx")
     ptid_visit_glycan.to_excel(savedir + "HVTN302_Glycan_Microarray_ptid_visitno_summary_count.xlsx")
 
+    shipping_manifest = pd.read_csv('/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/hvtn302_glycan_shipping_manifest_from_nick.txt', sep='\t')
+    missings = set(shipping_manifest.GLOBAL_ID).difference(igm_tmp.guspec)
+    shipping_manifest.loc[shipping_manifest.GLOBAL_ID.isin(missings),['GLOBAL_ID','PID','VID']].sort_values(by=['PID','VID'])
+
 if __name__=="__main__":
     main()
-    pivot()
