@@ -37,7 +37,7 @@ def main():
     data.columns = [i.lower().replace(" ","_") for i in data.columns]
 
     ldms = pd.read_csv(
-        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/specimens/ldms_feed/hvtn.ldms135.20240826.csv',
+        constants.LDMS_PATH_HVTN,
         usecols=constants.STANDARD_COLS,
         dtype=constants.LDMS_DTYPE_MAP
     )
@@ -50,7 +50,8 @@ def main():
         'assay_lab_name': 'Fouda Lab (Cornell)',
         'instrument': 'Bio-Rad BioPlex 200',
         'lab_software_version': 'BioPlex 6.2',
-        'assay_type': 'PVMA',
+        'assay_type': 'BAMA',
+        'assay_subtype': 'PVMA',
         'specrole': 'Sample',
         'result_units': 'RLU'
     }
@@ -82,6 +83,7 @@ def main():
         'upload_lab_id',
         'assay_lab_name',
         'assay_type',
+        'assay_subtype',
         'instrument',
         'lab_software_version',
         'antigen',
@@ -105,6 +107,12 @@ def main():
 
     outputs.assay_date = outputs.assay_date.astype(str)
     outputs.sample_dilution = outputs.sample_dilution.astype(str)
+
+    # drop hepB; they're going to assay it separately
+    outputs = outputs.loc[outputs.antigen!="HepB"]
+
+    # i think excel tried to make this a time
+    outputs['sample_dilution'] = outputs['sample_dilution'].astype(str).str[1:5]
 
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/bama_pvma/misc_files/data_processing/'
     today = datetime.date.today().isoformat()
@@ -135,4 +143,3 @@ def checks():
 if __name__=="__main__":
     main()
     checks()
-    
