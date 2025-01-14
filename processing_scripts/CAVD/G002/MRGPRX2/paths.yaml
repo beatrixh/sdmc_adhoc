@@ -1,5 +1,5 @@
 input_data_path: /networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/MRGPX2_Saini_JHU/
-savedir: /networks/vtn/lab/SDMC_labscience/studies/VISC/G002/data_processing/MRGPRX2/
+savedir: /networks/vtn/lab/SDMC_labscience/studies/VISC/G002/MRGPRX2/data_processing/
 output_prefix:
 - DRAFT_CAVD_G002_MRGPRX2_Processed
 yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/CAVD/G002/MRGPRX2/paths.yaml
