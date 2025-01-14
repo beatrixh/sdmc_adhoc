@@ -171,6 +171,24 @@ def main():
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
 
+    ## check for completeness against manifest
+    manifest = pd.read_csv(savedir + "shipping_manifest.txt", sep="\t")
+    outputs['core'] = outputs.guspec.str[:-4]
+    manifest['core'] = manifest.GLOBAL_ID.str[:-4]
+
+    # we have an exact match for guspec cores
+    core_mismatch = set(manifest.core).symmetric_difference(outputs.core)
+    print(f"exact match for guspec cores. core_mismatch: {core_mismatch}")
+
+    # all outputs from the lab are in the manifest
+    missing_from_manifest = set(outputs.guspec).difference(manifest.GLOBAL_ID)
+    print(f"all samples from lab are in the manifest")
+    print(f"sample from lab missing from manifest: {missing_from_manifest}")
+
+    # there are exactly three aliquots per guspec core in the manifest
+    aliquots_per_core = manifest.groupby('core')['GLOBAL_ID'].nunique().value_counts()
+    print(f"all cores have three aliquots: {aliquots_per_core}")
+
 def pivot():
     pd.pivot_table(data=outputs, values='result', index='ptid', columns='visitno', aggfunc='count', fill_value=0).to_csv(savedir + "ptid_visitno_summary.csv")
     outputs.guspec.value_counts().to_frame().to_csv(savedir + "guspec_summary.csv")
