@@ -1,5 +1,5 @@
 input_data_path: /trials/vaccine/p135/s001/qdata/LabData/HepB_ELISA_pass-through/
-savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/ELISA/misc_data/data_processing/
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/ELISA/misc_files/data_processing/
 output_prefix:
 - HVTN135_ELISA_HepB_Fouda_Processed
 yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN135/Fouda_ELISA/paths.yaml
