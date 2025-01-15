@@ -1,3 +1,9 @@
+## ---------------------------------------------------------------------------##
+# Author: Beatrix Haddock
+# Date: 01/14/2025
+# Purpose:  Ad hoc data processing of PVMA data from Fouda Lab
+## ---------------------------------------------------------------------------##
+
 import pandas as pd
 import numpy as np
 import datetime
@@ -6,7 +12,7 @@ import os
 
 import sdmc_tools.process as sdmc
 import sdmc_tools.constants as constants
-
+## ---------------------------------------------------------------------------##
 def main():
     input_data_path = '/trials/vaccine/p135/s001/qdata/LabData/HepB_ELISA_pass-through/HVTN_HepB ELISA Binding_Summary_Upload_V2.xlsx'
     df = pd.read_excel(input_data_path)
