@@ -9,7 +9,7 @@ import datetime
 import yaml
 import os
 
-import sdmc_tools.refactor_process as sdmc
+import sdmc_tools.process as sdmc
 import sdmc_tools.constants as constants
 ## ---------------------------------------------------------------------------##
 
@@ -68,6 +68,9 @@ def main():
     drop_cols = ['assay_lab', 'comments', 'der', 'upload_date', 'antigen_string', 'na']
     outputs = outputs.drop(columns=drop_cols)
 
+    # rename to match the ELISA'd HepB data
+    outputs = outputs.rename(columns={'sample_dilution':'dilution'})
+
     reorder = [
         'network',
         'protocol',
@@ -88,7 +91,7 @@ def main():
         'lab_software_version',
         'antigen',
         'beadset_num',
-        'sample_dilution',
+        'dilution',
         'result',
         'result_units',
         'assay_date',
@@ -106,13 +109,11 @@ def main():
     outputs = outputs[reorder]
 
     outputs.assay_date = outputs.assay_date.astype(str)
-    outputs.sample_dilution = outputs.sample_dilution.astype(str)
+    # i think excel tried to make this a time
+    outputs['dilution'] = outputs['dilution'].astype(str).str[1:5]
 
     # drop hepB; they're going to assay it separately
     outputs = outputs.loc[outputs.antigen!="HepB"]
-
-    # i think excel tried to make this a time
-    outputs['sample_dilution'] = outputs['sample_dilution'].astype(str).str[1:5]
 
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/bama_pvma/misc_files/data_processing/'
     today = datetime.date.today().isoformat()
