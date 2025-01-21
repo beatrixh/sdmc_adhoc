@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 09/03/2024
+# Date: 01.21.2025
 # Purpose:
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -132,8 +132,8 @@ def main():
     )
 
     ## IgG -------------------------------------------------------------------##
-    igg_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/lab_processed_data/'
-    sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/lab_processed_data/metadata/HVTN302-PatientSample-GlycanAnalysis.xlsx"
+    igg_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgG/lab_processed_data/'
+    sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgG/lab_processed_data/metadata/HVTN302-PatientSample-GlycanAnalysis.xlsx"
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
     igg = pull_and_merge_inputs(igg_datadir, 488, sample_mapping_path, glycan_info_path, "Hi")
@@ -156,7 +156,7 @@ def main():
     sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
     glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
 
-    igm = pull_and_merge_inputs(igm_datadir, 488, sample_mapping_path, glycan_info_path, "Lo")
+    igm = pull_and_merge_inputs(igm_datadir, 532, sample_mapping_path, glycan_info_path, "Lo")
     igm['isotype'] = 'IgM'
 
     files = os.listdir(igm_datadir)
