@@ -1,6 +1,7 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
 # Date: 10/16/2024
+# Revision: 01/21/2025
 # Purpose: For CAVD VISC: Concatenate / merge Glycan microarray data
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -42,12 +43,14 @@ def main():
             files = [f for f in files if f[-3:]=="txt"]
             sub = pd.DataFrame()
             for file in files:
-                sub = pd.concat([sub, get_data(datadir + file, 488)])
+                sub = pd.concat([sub, get_data(datadir + file, 532)])
             sub["site"] = site
             igm = pd.concat([igm, sub])
-    igm = igm.loc[igm.filter_pass=="Hi"]
+    igm = igm.loc[igm.filter_pass=="Lo"]
     igm['isotype'] = 'IgM'
     igm['background_subtraced_mean_signal'] = igm['mean_signal'] - igm['mean_background_signal']
+    # floating point error
+    igm['background_subtraced_mean_signal'] = igm['background_subtraced_mean_signal'].round(2)
     igm.site = igm.site.map({'Emory': 'Emory', 'FH': 'Fred Hutch', 'GW': 'George Washington', 'UT': 'University of Texas'})
 
     ## IgE ##
@@ -67,6 +70,8 @@ def main():
     ige = ige.loc[ige.filter_pass=="Hi"]
     ige['isotype'] = 'IgE'
     ige['background_subtraced_mean_signal'] = ige['mean_signal'] - ige['mean_background_signal']
+    # floating point error
+    ige['background_subtraced_mean_signal'] = ige['background_subtraced_mean_signal'].round(2)
     ige.site = ige.site.map({'Emory': 'Emory', 'FH': 'Fred Hutch', 'GW': 'George Washington', 'UT': 'University of Texas'})
 
     ## IgG ##
@@ -86,6 +91,8 @@ def main():
     igg = igg.loc[igg.filter_pass=="Hi"]
     igg['isotype'] = "IgG"
     igg['background_subtraced_mean_signal'] = igg['mean_signal'] - igg['mean_background_signal']
+    # floating point error
+    igg['background_subtraced_mean_signal'] = igg['background_subtraced_mean_signal'].round(2)
 
     ## Merge timepoint data (lab sample list) --------------------------------##
     def merge_on_visitno(data, visitno_df):
@@ -354,7 +361,7 @@ def main():
         'signal_channel',
         'mean_signal',
         'mean_background_signal',
-        'background_subtraced_mean_signal',
+        'background_subtraced_mean_signal', ## REACH OUT TO STATS TO UPDATE
         'filter_pass',
         'input_file_name',
         'glycan_mapping_file',
@@ -379,6 +386,41 @@ def main():
 
     pivot_summary = pd.pivot_table(outputs, index='ptid',columns=['isotype','visit'], aggfunc='count', fill_value=0)['mean_signal']
     pivot_summary.to_excel(savedir + f"CAVD_G002_glycan_ptid_visit_isotype_summary_{today}.xlsx")
+
+    ## check against 10/2024 version -----------------------------------------##
+
+    # IgM signal_channel, laser power ('filter_pass') and results have changed
+    # processing datetime has changed
+    # everything else should be the same
+
+    old = pd.read_csv(savedir + 'DRAFT_CAVD_G002_Glycan_Microarray_data_processed_2024-10-16.txt', sep="\t")
+
+    # correct floating point error
+    old.background_subtraced_mean_signal = old.background_subtraced_mean_signal.round(2)
+
+    # pandas types reading in differently; correct
+    outputs.sample_id = outputs.sample_id.astype(str)
+    old.sample_id = old.sample_id.astype(str)
+
+    outputs.date_drawn = outputs.date_drawn.astype(str)
+    old.date_drawn = old.date_drawn.astype(str)
+
+    outputs.signal_channel = outputs.signal_channel.astype(float)
+    old.signal_channel = old.signal_channel.astype(float)
+
+    # align to comparable format
+    old = old[list(outputs.columns)]
+
+    outputs = outputs.sort_values(by=list(outputs.columns)).reset_index(drop=True)
+    old = old.sort_values(by=list(outputs.columns)).reset_index(drop=True)
+
+    ## compare:
+    # after correcting for floating point math error
+    # IgG and IgE are identical!
+    outputs.loc[outputs.isotype!="IgM"].reset_index(drop=True).compare(old.loc[old.isotype!="IgM"].reset_index(drop=True))
+
+    # expected differences in IgM
+    outputs.loc[outputs.isotype=="IgM"].reset_index(drop=True).compare(old.loc[old.isotype=="IgM"].reset_index(drop=True))
 
 if __name__=="__main__":
     main()
