@@ -48,9 +48,9 @@ def main():
             igm = pd.concat([igm, sub])
     igm = igm.loc[igm.filter_pass=="Lo"]
     igm['isotype'] = 'IgM'
-    igm['background_subtraced_mean_signal'] = igm['mean_signal'] - igm['mean_background_signal']
+    igm['background_subtracted_mean_signal'] = igm['mean_signal'] - igm['mean_background_signal']
     # floating point error
-    igm['background_subtraced_mean_signal'] = igm['background_subtraced_mean_signal'].round(2)
+    igm['background_subtracted_mean_signal'] = igm['background_subtracted_mean_signal'].round(2)
     igm.site = igm.site.map({'Emory': 'Emory', 'FH': 'Fred Hutch', 'GW': 'George Washington', 'UT': 'University of Texas'})
 
     ## IgE ##
@@ -69,9 +69,9 @@ def main():
 
     ige = ige.loc[ige.filter_pass=="Hi"]
     ige['isotype'] = 'IgE'
-    ige['background_subtraced_mean_signal'] = ige['mean_signal'] - ige['mean_background_signal']
+    ige['background_subtracted_mean_signal'] = ige['mean_signal'] - ige['mean_background_signal']
     # floating point error
-    ige['background_subtraced_mean_signal'] = ige['background_subtraced_mean_signal'].round(2)
+    ige['background_subtracted_mean_signal'] = ige['background_subtracted_mean_signal'].round(2)
     ige.site = ige.site.map({'Emory': 'Emory', 'FH': 'Fred Hutch', 'GW': 'George Washington', 'UT': 'University of Texas'})
 
     ## IgG ##
@@ -90,9 +90,9 @@ def main():
 
     igg = igg.loc[igg.filter_pass=="Hi"]
     igg['isotype'] = "IgG"
-    igg['background_subtraced_mean_signal'] = igg['mean_signal'] - igg['mean_background_signal']
+    igg['background_subtracted_mean_signal'] = igg['mean_signal'] - igg['mean_background_signal']
     # floating point error
-    igg['background_subtraced_mean_signal'] = igg['background_subtraced_mean_signal'].round(2)
+    igg['background_subtracted_mean_signal'] = igg['background_subtracted_mean_signal'].round(2)
 
     ## Merge timepoint data (lab sample list) --------------------------------##
     def merge_on_visitno(data, visitno_df):
@@ -361,7 +361,7 @@ def main():
         'signal_channel',
         'mean_signal',
         'mean_background_signal',
-        'background_subtraced_mean_signal', ## REACH OUT TO STATS TO UPDATE
+        'background_subtracted_mean_signal',
         'filter_pass',
         'input_file_name',
         'glycan_mapping_file',
@@ -396,7 +396,7 @@ def main():
     old = pd.read_csv(savedir + 'DRAFT_CAVD_G002_Glycan_Microarray_data_processed_2024-10-16.txt', sep="\t")
 
     # correct floating point error
-    old.background_subtraced_mean_signal = old.background_subtraced_mean_signal.round(2)
+    old.background_subtracted_mean_signal = old.background_subtracted_mean_signal.round(2)
 
     # pandas types reading in differently; correct
     outputs.sample_id = outputs.sample_id.astype(str)
