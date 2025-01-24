@@ -87,7 +87,9 @@ def pull_and_merge_inputs(datadir, channel, sample_mapping_path, glycan_info_pat
     ## final pre-processing --------------------------------------------------##
 
     # add primary result column
+    # there's a typo here but maintaining it because stats has already coded off it
     data[f'background_subtraced_mean_signal'] = data.mean_signal - data.mean_background_signal
+    data['background_subtraced_mean_signal'] = data['background_subtraced_mean_signal'].round(2)
 
     return data
 
