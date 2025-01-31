@@ -223,7 +223,7 @@ def main():
     compare_metadata(cavd_sample_list_path, igm_visitno_metadata_path)
 
     ## merge on glycan metadata ----------------------------------------------##
-    glycan_info_path = "/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/Glycan_array_Scripps/Scheif-GlycanArrayList-Final.xlsx"
+    glycan_info_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/metadata_approved_by_lab/Scheif-GlycanArrayList-Final.xlsx"
 
     def merge_on_glycan_info(data, glycan_info_path):
         glyc_info = pd.read_excel(glycan_info_path)

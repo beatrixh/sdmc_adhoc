@@ -116,7 +116,7 @@ def main():
     ## IgE -------------------------------------------------------------------##
     ige_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/'
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgE/lab_processed_data/HVTN302-PatientSample-GlycanAnalysis.xlsx"
-    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
+    glycan_info_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/metadata_approved_by_lab/Scheif-GlycanArrayList-Final.xlsx"
 
     ige = pull_and_merge_inputs(ige_datadir, 532, sample_mapping_path, glycan_info_path, "Hi")
     ige['isotype'] = 'IgE'
@@ -136,7 +136,7 @@ def main():
     ## IgG -------------------------------------------------------------------##
     igg_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgG/lab_processed_data/'
     sample_mapping_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgG/lab_processed_data/metadata/HVTN302-PatientSample-GlycanAnalysis.xlsx"
-    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
+    glycan_info_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/metadata_approved_by_lab/Scheif-GlycanArrayList-Final.xlsx"
 
     igg = pull_and_merge_inputs(igg_datadir, 488, sample_mapping_path, glycan_info_path, "Hi")
     igg['isotype'] = 'IgG'
@@ -156,7 +156,7 @@ def main():
     ## IgM old -------------------------------------------------------------------##
     igm_datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/10_01_2024/'
     sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
-    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
+    glycan_info_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/metadata_approved_by_lab/Scheif-GlycanArrayList-Final.xlsx"
 
     igm = pull_and_merge_inputs(igm_datadir, 532, sample_mapping_path, glycan_info_path, "Lo")
     igm['isotype'] = 'IgM'
@@ -176,7 +176,7 @@ def main():
     ## IgM new -------------------------------------------------------------------##
     igm_datadir_new = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/lab_processed_data/11_25_2024/'
     sample_mapping_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/IgM/HVTN302-PatientSample-GlycanAnalysis.xlsx'
-    glycan_info_path = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/glycan_microarray/misc_files/Scheif-GlycanArrayList-Final.xlsx"
+    glycan_info_path = "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Glycan_array/metadata_approved_by_lab/Scheif-GlycanArrayList-Final.xlsx"
 
     igm_new = pull_and_merge_inputs(igm_datadir_new, 488, sample_mapping_path, glycan_info_path, "Lo")
     igm_new['isotype'] = 'IgM'
