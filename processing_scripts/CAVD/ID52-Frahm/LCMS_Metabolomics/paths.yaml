@@ -1,0 +1,3 @@
+input_data_path: '/networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/GatesM72_PNNL_LCMS_Metabolomics_2024_08_FINAL.xlsx'
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Metabolomics/'
+output_prefix: 'DRAFT_LCMS_Metabolomics_processed'
