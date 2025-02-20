@@ -59,3 +59,9 @@ summary = pd.pivot_table(summary, index=['Assay','treatment'], columns=['Visit']
 
 # save summary dataset
 summary.to_excel(savedir + "ohsu_omics_data_summary.xlsx")
+
+# check ptids against clinical dataset
+check_clinical_dataset = pd.read_csv("/networks/cavd/obj4/GH-VAP/ID52-Frahm/Data/pilot_adata/clinical/TB018_full_rx_pilot.csv")
+
+# it matches all rows in this dataset where "assay_testing"==0.0
+set(check_clinical_dataset.loc[check_clinical_dataset.assay_testing==0.0].ptid).symmetric_difference(all_data.ptid)
