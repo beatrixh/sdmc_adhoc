@@ -1,3 +1,6 @@
-input_data_path: '/networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/GatesM72_PNNL_LCMS_Proteomics_2024_08_FINAL.xlsx'
-savedir: '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Lipidomics/'
-output_prefix: 'DRAFT_LCMS_Proteomics_processed'
+input_data_path: /networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/GatesM72_PNNL_LCMS_Proteomics_2024_08_FINAL.xlsx
+savedir: /networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Proteomics/
+output_prefix:
+- DRAFT_LCMS_Proteomics_processed
+yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/CAVD/ID52-Frahm/LCMS_Proteomics/paths.yaml
+guspecs: []

@@ -9,6 +9,7 @@ import os
 import datetime
 
 def main():
+    ## -----------------------------------------------------------------------##
     datadir = '/networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/'
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/GCMS_Metabolomics/'
 
@@ -33,109 +34,158 @@ def main():
     gcms_metab = pd.concat([gcms_metab, gcms_metab.variable.str.split(";", expand=True)], axis=1)
     gcms_metab = gcms_metab.drop(columns='variable')
 
-    # filter out rows with weird (non numeric) values
     gcms_metab['qc_filter'] = False
     gcms_metab.loc[gcms_metab.Value=='tegration parameters!', 'qc_filter'] = True
     gcms_metab.loc[gcms_metab.Value=='tegration parameters!', 'Value'] = np.nan
 
-    # rename columns
-    gcms_metab.columns = ['Antigen', 'metab_annotation', 'Value', 'sample_name', 'sample_type', 'qc_filter']
-    gcms_metab[['Antigen','sample_name']].drop_duplicates().shape, gcms_metab.shape
+    gcms_metab = gcms_metab.rename(columns={
+        'Metabolite;nan':'Metabolite',
+        'Annotation description;nan':'Annotation description',
+        0:'sample_name',
+        1:'sample_type'
+    })
 
-    # parse out ptid, Visit, sampleid, then merge on
+    # merge on sample id columns
     sampleids = gcms_metab.sample_name.str[len("Gates_Mtb_"):].str.replace("-","_").str.split("_", expand=True).iloc[:,:2]
     sampleids.columns = ['ptid','Visit']
     sampleids['Visit'] = "Day " + sampleids.Visit.str[1:]
+
     sampleids.loc[gcms_metab.sample_type!='Sample','ptid'] = np.nan
     sampleids.loc[gcms_metab.sample_type!='Sample','Visit'] = np.nan
 
     sampleids['sampleid'] = sampleids['ptid'] + "|" + sampleids['Visit']
     gcms_metab = pd.concat([gcms_metab, sampleids], axis=1)
 
-    # verify these create a bioid
-    bioid_is_unique = len(gcms_metab[['Antigen','sample_name']].drop_duplicates()) == len(gcms_metab)
-    if not bioid_is_unique:
-        raise Exception("Bioid not unique")
-
-    # merge on bioid
-    gcms_metab['bioid'] = gcms_metab['Antigen'] + "|" + gcms_metab['sample_name']
-
     timestamp = datetime.datetime.fromtimestamp(os.path.getmtime(gcms_metab_filepath)).date().isoformat()
+    sdmc_processing_datetime = datetime.datetime.now().replace(microsecond=0).isoformat()
 
     gcms_metab_metadata = pd.DataFrame({
         'network': ['GHDC'],
         'protocol': ['ID52-Frahm'],
-        'lab_name': ['Tafesse OHSU/PNNL'],
+        'assay_lab_name': ['Tafesse OHSU/PNNL'],
         'assay_type': ['GCMS Metabolomics'],
-        'transform': ['log'],
         'Unit': ['Relative peak area'],
         'upload_date': [timestamp],
         'filename': [gcms_metab_filepath.rpartition("/")[-1]],
-        'LLOD': [0.0]
+        'sdmc_processing_datetime':[sdmc_processing_datetime]
     })
 
     gcms_metab = gcms_metab.merge(gcms_metab_metadata, how='cross')
 
-    reorder = [
+    # From andrew: I typically put the sample columns first (ptid, Visit, sampleid), then the assay columns (eg Antigen, Isotype), then Value and other metadata columns like units and transform and additional columns.
+
+    reorder_qdata = [
         'network',
         'protocol',
-        'lab_name',
+        'assay_lab_name',
         'assay_type',
         'ptid',
         'Visit',
         'sampleid',
-        'Antigen',
-        'bioid',
-        'Value',
-        'LLOD',
         'sample_name',
         'sample_type',
-        'transform',
+        'Metabolite',
+        'Annotation description',
+        'Value',
         'Unit',
+        'qc_filter',
         'upload_date',
         'filename',
-        'metab_annotation',
-        'qc_filter'
+        'sdmc_processing_datetime'
     ]
 
-    # ensure this doesn't try to add or drop columns
-    mismatch = set(gcms_metab.columns).symmetric_difference(reorder)
-    if len(mismatch) > 0:
-        raise Warning(f"Trying to add or drop colummns: {mismatch}")
+    # check not dropping or adding columns
+    check = set(reorder_qdata).symmetric_difference(gcms_metab.columns)
+    if len(check)>0:
+        raise Warning(f"trying to add or drop columns {check}")
+    gcms_metab = gcms_metab[reorder_qdata]
 
-    gcms_metab = gcms_metab[reorder]
+    ## save qdata to txt -----------------------------------------------------##
+    today = datetime.date.today().isoformat()
+    gcms_metab.to_csv(savedir + f"DRAFT_GCMS_Metabolomics_processed_{today}.txt", sep="\t", index=False)
+
+    ## adata -----------------------------------------------------------------##
+    adata = gcms_metab.copy()
+    adata = adata.rename(columns={
+        'Metabolite': 'Antigen',
+        'Annotation description': 'metab_annotation',
+    })
+
+    adata_metadata = pd.DataFrame({
+        'LLOD': [0.0],
+        'transform': ['log'],
+    })
+    adata = adata.merge(adata_metadata, how='cross')
+
+    adata['bioid'] = adata['Antigen']
+
+    check = len(adata[['bioid','sample_name']].drop_duplicates()) == len(adata)
+    if not check:
+        raise Warning("Bioid not unique")
+
+    reorder_adata = [
+        'ptid',
+        'Visit',
+        'sampleid',
+        'sample_name',
+        'sample_type',
+        'Antigen',
+        'metab_annotation',
+        'bioid',
+        'Value',
+        'Unit',
+        'LLOD',
+        'transform',
+        'qc_filter',
+        'upload_date',
+        'filename',
+    ]
+
+    check = set(reorder_adata).symmetric_difference(adata.columns)
+    if len(check)>0:
+        raise Warning(f"trying to add or drop columns {check}")
+    adata = adata[reorder_adata]
+
+    ## save adata to txt -----------------------------------------------------##
+    # I think you were going to save something like qdata first and then produce adata right? The qdata can go in the same folder as the raw data: /networks/cavd/obj4/GH-VAP/ID52-Frahm/Data/OHSU_omics whereas the adata sets can be placed here: networks/cavd/obj4/GH-VAP/ID52-Frahm/Data/pilot_adata (use the naming convention of other files in the folder with a prefix and date. Use prefix ohsu_XXXX for whichever assay it is.
+    adata.to_csv(savedir + f'ohsu_gcms_metabolomics_adata_{today}', sep="\t", index=False)
 
     ## Checks ----------------------------------------------------------------##
 
     # every sample has 135 antigens
-    gcms_metab.groupby(['sample_name']).Antigen.nunique().value_counts()
+    adata.groupby(['sample_name']).Antigen.nunique().value_counts()
 
     # every antigen has 164 samples
-    gcms_metab.groupby(['Antigen']).sample_name.nunique().value_counts()
+    adata.groupby(['Antigen']).sample_name.nunique().value_counts()
 
     # clinical dataset from andrew
     check_clinical_dataset = pd.read_csv("/networks/cavd/obj4/GH-VAP/ID52-Frahm/Data/pilot_adata/clinical/TB018_full_rx_pilot.csv")
 
     # exact match between data ptids and assay_testing==0.0 rows
-    set(gcms_metab.ptid.dropna().astype(int)).symmetric_difference(check_clinical_dataset.loc[check_clinical_dataset.assay_testing==0.0].ptid.astype(int))
+    set(adata.ptid.dropna().astype(int)).symmetric_difference(check_clinical_dataset.loc[check_clinical_dataset.assay_testing==0.0].ptid.astype(int))
 
     # check against other omics datasets
-    set(gcms_metab.sampleid.dropna()).difference(lcms_metab.sampleid.dropna())
-    set(lcms_metab.sampleid.dropna()).difference(gcms_metab.sampleid.dropna())
+    path = '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Metabolomics/DRAFT_LCMS_Metabolomics_processed_2025-02-15.txt'
+    lcms_metab = pd.read_csv(path, sep="\t")
+
+    path = '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Proteomics/DRAFT_LCMS_Proteomics_processed_2025-02-15.txt'
+    prot = pd.read_csv(path, sep="\t")
+
+    path = '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Lipidomics/DRAFT_LCMS_Lipidomics_processed_2025-02-15.txt'
+    lipid = pd.read_csv(path, sep="\t")
+
+    set(adata.sampleid.dropna()).difference(lcms_metab.sampleid.dropna())
+    set(lcms_metab.sampleid.dropna()).difference(adata.sampleid.dropna())
 
     # missing 6657|Day 37
-    set(gcms_metab.sampleid.dropna()).difference(prot.sampleid.dropna())
-    set(prot.sampleid.dropna()).difference(gcms_metab.sampleid.dropna())
+    set(adata.sampleid.dropna()).difference(prot.sampleid.dropna())
+    set(prot.sampleid.dropna()).difference(adata.sampleid.dropna())
 
-    set(gcms_metab.sampleid.dropna()).difference(lipid.sampleid.dropna())
-    set(lipid.sampleid.dropna()).difference(gcms_metab.sampleid.dropna())
-
-    ## save to txt -----------------------------------------------------------##
-    today = datetime.date.today().isoformat()
-    gcms_metab.to_csv(savedir + f"DRAFT_GCMS_Metabolomics_processed_{today}.txt", sep="\t", index=False)
+    set(adata.sampleid.dropna()).difference(lipid.sampleid.dropna())
+    set(lipid.sampleid.dropna()).difference(adata.sampleid.dropna())
 
     ## pivot summary ---------------------------------------------------------##
-    pivot_summary = gcms_metab.copy()
+    pivot_summary = adata.copy()
     pivot_summary[['ptid','Visit','Antigen']] = pivot_summary[['ptid','Visit','Antigen']].fillna("NA")
     summary = pd.pivot_table(pivot_summary,
                              index=['ptid','Visit'],
