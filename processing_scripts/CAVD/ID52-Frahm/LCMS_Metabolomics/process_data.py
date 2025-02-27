@@ -1,7 +1,7 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 02/15/2025
-# Purpose: Process GCMS Metabolomics data. Create qdata + adata
+# Date: 02/25/2025
+# Purpose: Process LCMS Metabolomics data. Create qdata + adata
 ## ---------------------------------------------------------------------------##
 import pandas as pd
 import numpy as np
@@ -173,7 +173,6 @@ def main():
         'Unit',
         'upload_date',
         'filename',
-        'sdmc_processing_datetime',
     ]
 
     set(reorder_adata).symmetric_difference(adata.columns)
