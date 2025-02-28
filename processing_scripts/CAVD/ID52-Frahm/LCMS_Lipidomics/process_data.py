@@ -127,7 +127,7 @@ def main():
 
     adata = adata.merge(adata_metadata, how='cross')
 
-    adata['bioid'] = adata[['Antigen','RT','Adduct type','sample_name']].astype(str).apply('|'.join, axis=1)
+    adata['bioid'] = adata[['Antigen','RT','Adduct type']].astype(str).apply('|'.join, axis=1)
     adata[['bioid','sample_name']].drop_duplicates().shape[0] == len(adata)
 
     reorder_adata = [
@@ -162,28 +162,22 @@ def main():
     adata.to_csv(savedir + f'ohsu_lcms_lipidolomics_adata_{today}.txt', sep="\t", index=False)
 
     ## pivot summary ---------------------------------------------------------##
-    summary = adata.copy()
-    summary[['Antigen','S/N average','sample_name','phase_mode']] = summary[['Antigen','S/N average','sample_name','phase_mode']].fillna("NA")
+    summary = pd.pivot_table(adata.loc[adata.sampleid.notna()],
+                             index=['Antigen','RT','Adduct type'],
+                              columns='Visit',
+                             aggfunc='count',
+                             fill_value=0)[['Value']]
+    summary = summary.rename(columns={'Value':'ptid_count'})
+    summary.to_excel(savedir + "LCMS_Lipidomics_bioid_Visit_summary.xlsx")
 
-    pivot_summary = pd.pivot_table(
-        summary,
-        index=['Antigen','S/N average','phase_mode'],
-        columns=['ptid','Visit'],
-        aggfunc='count',
-        fill_value=0
-    )[['Value']]
-
-    pivot_summary.to_csv(savedir + "LCMS_Lipidomics_pivot_summary_with_sn_average.txt", sep="\t")
-
-    pivot_summary_just_antigen = pd.pivot_table(
-        summary,
-        index=['Antigen','phase_mode'],
-        columns=['ptid','Visit'],
-        aggfunc='count',
-        fill_value=0
-    )[['Value']]
-
-    pivot_summary_just_antigen.to_csv(savedir + "LCMS_Lipidomics_pivot_summary_without_sn_average.txt", sep="\t")
+    # Antigen','RT','Adduct type','sample_name
+    summary2 = pd.pivot_table(adata.loc[adata.sampleid.notna()],
+                              index=['Antigen','RT','Adduct type'],
+                              columns=['ptid','Visit'],
+                              aggfunc='count',
+                              fill_value=0)[['Value']]
+    summary2 = summary2.rename(columns={'Value':'ptid_count'})
+    summary2.to_excel(savedir + "LCMS_Lipidomics_bioid_ptid_Visit_summary.xlsx")
 
     ## checks ----------------------------------------------------------------##
     check_clinical_dataset = pd.read_csv("/networks/cavd/obj4/GH-VAP/ID52-Frahm/Data/pilot_adata/clinical/TB018_full_rx_pilot.csv")
