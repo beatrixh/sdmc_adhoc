@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 2024-12-23
+# Date: 2025-03-03
 # Purpose: Process G002 MRGPRX2 data from Saini Lab
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -11,8 +11,22 @@ import datetime
 
 def main():
     ## pull in data and merge together -------------------------------------- ##
+    fnames = [
+        '202408~3.XLS',
+        '20240802 b-HEX-LAD2_X2 WT_KO_C4880_IAVI-G002.xlsx',
+        '20240806 b-HEX-LAD2_X2 WT_KO_C4880_IAVI-G002BoxC-#12-#13-S.xlsx',
+        '20240806 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-BoxC-#14-#15-S.xlsx',
+        '20241004 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-BoxB-#3-#4-S.xlsx',
+        '20241011 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-BoxB-#5-S.xlsx',
+        '20241016 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-BoxB-#6-#7-S.xlsx',
+        '20241025 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-P1-S.xlsx',
+        '20241025 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-P2-S.xlsx',
+        '20241029 b-HEX-LAD2_X2 WT_KO_C4880_IAVIG002-P1-S.xlsx'
+    ]
     datadir = '/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/MRGPX2_Saini_JHU/'
-    fnames = [i for i in os.listdir(datadir) if i[:4]=='2024']
+
+    new_datadir = '/networks/cavd/VDCs/Schief/Schief_856-G002/SkinReactions/data/MRGPX2_Saini_JHU/20250225_upload/'
+    new_fnames = os.listdir(new_datadir)
 
     def get_idx_of_Average(df):
         """
@@ -39,8 +53,12 @@ def main():
     for f in fnames:
         all_data[f] = get_subset(datadir + f)
 
-    def grab_desired_data(f):
-        d = all_data[f]
+    new_data = {}
+    for f in new_fnames:
+        new_data[f] = get_subset(new_datadir + f)
+
+    def grab_desired_data(f, usedict, datadir):
+        d = usedict[f]
         d = d.reset_index(drop=True)
         d.columns = d.iloc[1]
         d = d.iloc[2:]
@@ -56,18 +74,24 @@ def main():
         s = s.set_index('sample_type')[['result']].T
         d = d.merge(s, how='cross')
         d['input_file_name'] = f
+        receipt_time = datetime.datetime.fromtimestamp(os.path.getmtime(datadir + f)).replace(microsecond=0).isoformat()
+        d['sdmc_data_receipt_datetime'] = receipt_time
         return d
 
     ## merge on metadata from sample sheet ---------------------------------- ##
-    df = pd.concat([grab_desired_data(f) for f in fnames])
-    df[['ptid','visitno']] = df.jhmi_sample_id_a.str.split("_", expand=True)
+    df = pd.concat([grab_desired_data(f, all_data, datadir) for f in fnames])
+    new_df = pd.concat([grab_desired_data(f, new_data, new_datadir) for f in new_fnames])
 
+    df = pd.concat([df, new_df])
+
+    df[['ptid','visitno']] = df.jhmi_sample_id_a.str.split("_", expand=True)
     sample_sheet_fname = 'Summary IAVI samples 12.2024.xlsx'
     sample_sheet = pd.read_excel(datadir + sample_sheet_fname)
     sample_sheet.columns = sample_sheet.iloc[3]
     sample_sheet = sample_sheet.iloc[4:].dropna(how='all')
     sample_sheet = sample_sheet.reset_index(drop=True)
 
+    # assign Site to each row (instead of just first row of each group)
     for i in range(len(sample_sheet)):
         if pd.isnull(sample_sheet.Site.iloc[i]):
             sample_sheet.Site.iloc[i] = sample_sheet.Site.iloc[i-1]
@@ -79,12 +103,6 @@ def main():
     df['potential_error'] = False
     df['error_detail'] = 'N/A'
 
-    # FIXING TYPOS -- EXPECTING TO UPDATE AFTER HEARING FROM ROMI ----------- ##
-    df.loc[df.ptid.isin(['G259002', 'G259005']),'potential_error'] = True
-    df.loc[df.ptid.isin(['G259002']),'error_detail'] = "Lab submitted ptid 'G259002'"
-    df.loc[df.ptid.isin(['G259005']),'error_detail'] = "Lab submitted ptid 'G259005'"
-
-    df.loc[df.ptid.isin(['G259002', 'G259005']),'ptid'] = df.loc[df.ptid.isin(['G259002', 'G259005'])].ptid.map({'G259002':'G00259002', 'G259005':'G00259005'})
     df = df.merge(sample_sheet[['Site','Box','ptid']], on='ptid', how='left')
 
     # # make sure sample sheet boxes map individual sheet boxes
@@ -153,27 +171,11 @@ def main():
     ref_sheet.ptid = ref_sheet.ptid.str.replace("-","").str.strip()
     df.ptid = df.ptid.astype(str).str.strip()
 
-    tmp = df[['ptid','visitno']].merge(ref_sheet, on=['ptid','visitno'], how='outer')
-
-    # CORRECT TYPOS -- EXPECTING TO UPDATE AFTER HEARING FROM ROMI ---------- ##
-    df.loc[(df.ptid=="G00258016") & (df.visitno==160), 'potential_error'] = True
-    df.loc[(df.ptid=="G00258016") & (df.visitno==160), 'error_detail'] = "Lab submitted ptids 160 and 161 for this row. 161 appears to be correct; this was an ad hoc visit likely due to insufficient blood drawn during visit 160 on 2022-07-13"
-    df.loc[(df.ptid=="G00258016") & (df.visitno==160), 'visitno'] = 161
-
-    df.loc[(df.ptid=="G00258025") & (df.visitno==550), 'potential_error'] = True
-    df.loc[(df.ptid=="G00258025") & (df.visitno==550), 'error_detail'] = "Lab submitted visitnos 550 and 540 for this row"
-    df.loc[(df.ptid=="G00258025") & (df.visitno==550), 'visitno'] = 540
-
-    df.loc[(df.ptid=="G00258026") & (df.visitno==550), 'potential_error'] = True
-    df.loc[(df.ptid=="G00258026") & (df.visitno==550), 'error_detail'] = "Lab submitted visitnos 550 and 540 for this row"
-    df.loc[(df.ptid=="G00258026") & (df.visitno==550), 'visitno'] = 540
-
     df = df.merge(ref_sheet, on=['ptid','visitno'], how = 'left')
 
     ## final formatting + metadata ------------------------------------------ ##
     df.columns = [i.lower().replace(" ","_") for i in df.columns]
 
-    receipt_time = datetime.datetime.fromtimestamp(os.path.getmtime(datadir + sample_sheet_fname)).replace(microsecond=0).isoformat()
     sdmc_processing_timestamp = datetime.datetime.now().replace(microsecond=0).isoformat()
 
     metadata = {
@@ -188,7 +190,6 @@ def main():
         'lab_result_units': ['Percent'],
         'jhmi_sample_mapping_file': ['Summary IAVI samples 04.2024.xlsx'],
         'jhmi_secondary_mapping_file': [sample_sheet_fname],
-        'sdmc_data_receipt_datetime': [receipt_time],
         'sdmc_processing_datetime': [sdmc_processing_timestamp],
     }
     df = df.merge(pd.DataFrame(metadata), how='cross')
@@ -245,7 +246,7 @@ def main():
     ## save ----------------------------------------------------------------- ##
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/VISC/G002/MRGPRX2/data_processing/'
     today = datetime.date.today().isoformat()
-    fname = f'PROVISIONAL_CAVD_G002_MRGPRX2_Processed_{today}.txt'
+    fname = f'CAVD_G002_MRGPRX2_Processed_{today}.txt'
 
     df.to_csv(savedir + fname, sep="\t", index=False)
 
@@ -300,16 +301,35 @@ def main():
     df_calculated = df_calculated[reorder_calculated]
 
     today = datetime.date.today().isoformat()
-    fname_calculated = f'PROVISIONAL_CAVD_G002_MRGPRX2_calculated_delta_pct_release_{today}.txt'
+    fname_calculated = f'CAVD_G002_MRGPRX2_calculated_delta_pct_release_{today}.txt'
 
     df_calculated.to_csv(savedir + fname_calculated, sep="\t", index=False)
 
+    ## verify only expected columns changed in 2025-02 update --------------- ##
+    old = pd.read_csv(savedir + "PROVISIONAL_CAVD_G002_MRGPRX2_Processed_2024-12-23.txt", sep="\t")
+
+    df.sample_id = df.sample_id.astype(str)
+    old.sample_id = old.sample_id.astype(str)
+
+    df = df.sort_values(by='sample_id').reset_index(drop=True)
+    old = old.sort_values(by='sample_id').reset_index(drop=True)
+
+    df.drawdt = df.drawdt.astype(str)
+    old.drawdt = old.drawdt.astype(str)
+
+    df.lab_result_ko = df.lab_result_ko.astype(float)
+    old.lab_result_ko = old.lab_result_ko.astype(float)
+
+    dropcols = ['potential_error','error_detail','sdmc_data_receipt_datetime','sdmc_processing_datetime','input_file_name']
+
+    df.drop(columns=dropcols).compare(old.drop(columns=dropcols))
+
     ## pivot summary -------------------------------------------------------- ##
-    # pivot_summary = pd.pivot_table(df, index='ptid', columns='visitno', aggfunc='count', fill_value=0)['wt']
-    # pivot_summary.to_excel(savedir + 'CAVD_G002_MRGPRX_ptid_visit_summary.xlsx')
+    pivot_summary = pd.pivot_table(df, index='ptid', columns='visitno', aggfunc='count', fill_value=0)['lab_result_wt']
+    pivot_summary.to_excel(savedir + 'CAVD_G002_MRGPRX_ptid_visit_summary_2025-02-27.xlsx')
 
     pivot_summary = pd.pivot_table(df, index='ptid', columns='visitno', aggfunc='count', fill_value=0)['lab_result_wt']
-    pivot_summary.to_excel(savedir + 'CAVD_G002_MRGPRX_ptid_visit_summary_2024_12_23.xlsx')
+    pivot_summary.to_excel(savedir + 'CAVD_G002_MRGPRX_ptid_visit_summary_2025-02-27.xlsx')
 
 if __name__=="__main__":
     main()
