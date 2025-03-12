@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 02/15/2025
+# Date: 03/04/2025
 # Purpose: Process GCMS Metabolomics data. Create qdata + adata
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -45,10 +45,14 @@ def main():
         1:'sample_type'
     })
 
-    # merge on sample id columns
-    sampleids = gcms_metab.sample_name.str[len("Gates_Mtb_"):].str.replace("-","_").str.split("_", expand=True).iloc[:,:2]
+    #merge on sample id columns
+    sampleids = gcms_metab.sample_name.str[len("Gates_Mtb_"):]
+    sampleids = sampleids.str.split("_d", expand=True)
     sampleids.columns = ['ptid','Visit']
-    sampleids['Visit'] = "Day " + sampleids.Visit.str[1:]
+
+    # correct labeling issue
+    sampleids.loc[sampleids.ptid=='6657','Visit'] = sampleids.loc[sampleids.ptid=='6657'].Visit.map({'0-1':'37','0-2':'0'})
+    sampleids['Visit'] = "Day " + sampleids.Visit
 
     sampleids.loc[gcms_metab.sample_type!='Sample','ptid'] = np.nan
     sampleids.loc[gcms_metab.sample_type!='Sample','Visit'] = np.nan
@@ -177,7 +181,6 @@ def main():
     set(adata.sampleid.dropna()).difference(lcms_metab.sampleid.dropna())
     set(lcms_metab.sampleid.dropna()).difference(adata.sampleid.dropna())
 
-    # missing 6657|Day 37
     set(adata.sampleid.dropna()).difference(prot.sampleid.dropna())
     set(prot.sampleid.dropna()).difference(adata.sampleid.dropna())
 

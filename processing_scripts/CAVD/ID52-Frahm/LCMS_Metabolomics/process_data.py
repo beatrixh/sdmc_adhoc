@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 02/25/2025
+# Date: 03/04/2025
 # Purpose: Process LCMS Metabolomics data. Create qdata + adata
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -52,19 +52,20 @@ def main():
     lcms_metab = pd.concat(lcms_metab.values())
 
     ## merge on sample id columns --------------------------------------------##
-    sampleids = lcms_metab['sample_name'].str[len('Gates_Mtb_'):].str.split("_", expand=True)
-    sampleids = sampleids.iloc[:,:2]
-
+    sampleids = lcms_metab.sample_name.str[len("Gates_Mtb_"):]
+    sampleids = sampleids.str.split("_d", expand=True)
     sampleids.columns = ['ptid','Visit']
 
-    sampleids.loc[lcms_metab.sample_type!='Sample', 'ptid'] = np.nan
-    sampleids.loc[lcms_metab.sample_type!='Sample', 'Visit'] = np.nan
+    sampleids['Visit'] = sampleids.Visit.str.split("_", expand=True)[0]
 
-    sampleids.Visit = sampleids.Visit.str.split("-", expand=True)[0]
+    # correct labeling issue
+    sampleids.loc[sampleids.ptid=='6657','Visit'] = sampleids.loc[sampleids.ptid=='6657'].Visit.map({'0-1':'37','0-2':'0'})
+    sampleids['Visit'] = "Day " + sampleids.Visit
 
-    sampleids['Visit'] = "Day " + sampleids['Visit'].str[1:]
-    sampleids['sampleid'] = sampleids.ptid + "|" + sampleids.Visit
+    sampleids.loc[lcms_metab.sample_type!='Sample','ptid'] = np.nan
+    sampleids.loc[lcms_metab.sample_type!='Sample','Visit'] = np.nan
 
+    sampleids['sampleid'] = sampleids['ptid'] + "|" + sampleids['Visit']
     lcms_metab = pd.concat([lcms_metab, sampleids], axis=1)
 
     ## merge on metadata -----------------------------------------------------##

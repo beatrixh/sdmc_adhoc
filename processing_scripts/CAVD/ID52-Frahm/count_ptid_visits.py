@@ -18,10 +18,10 @@ parent_dir = '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_mi
 savedir = '/networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/'
 
 # read in processed versions of datasets
-lcms_metabolomics = pd.read_csv(parent_dir + "/LCMS_Metabolomics/DRAFT_LCMS_Metabolomics_processed_2025-02-19.txt", sep="\t")
-gcms_metabolomics = pd.read_csv(parent_dir + "/GCMS_Metabolomics/DRAFT_GCMS_Metabolomics_processed_2025-02-15.txt", sep="\t")
-lcms_proteomics = pd.read_csv(parent_dir + "/LCMS_Proteomics/DRAFT_LCMS_Proteomics_processed_2025-02-19.txt", sep="\t")
-lcms_lipidomics = pd.read_csv(parent_dir + "/LCMS_Lipidomics/DRAFT_LCMS_Lipidomics_processed_2025-02-20.txt", sep="\t")
+lcms_metabolomics = pd.read_csv(parent_dir + "/LCMS_Metabolomics/DRAFT_LCMS_Metabolomics_processed_2025-03-04.txt", sep="\t")
+gcms_metabolomics = pd.read_csv(parent_dir + "/GCMS_Metabolomics/DRAFT_GCMS_Metabolomics_processed_2025-03-04.txt", sep="\t")
+lcms_proteomics = pd.read_csv(parent_dir + "/LCMS_Proteomics/DRAFT_LCMS_Proteomics_processed_2025-03-11.txt", sep="\t")
+lcms_lipidomics = pd.read_csv(parent_dir + "/LCMS_Lipidomics/DRAFT_LCMS_Lipidomics_processed_2025-03-04.txt", sep="\t")
 
 # add a sample_type column to proteomics (for subsetting)
 lcms_proteomics['sample_type'] = 'Sample'

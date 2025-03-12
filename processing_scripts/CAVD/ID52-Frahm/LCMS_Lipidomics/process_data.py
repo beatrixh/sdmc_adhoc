@@ -43,13 +43,22 @@ def main():
     lcms_lipid = pd.concat(lcms_lipid.values()).reset_index(drop=True)
 
     ## merge on sample ids ---------------------------------------------------##
-    sampleids = lcms_lipid.loc[lcms_lipid.sample_type=="Sample"].sample_name.str[len("Gates_Mtb_"):].str.split("_", expand=True).iloc[:,:2]
-    sampleids[1] = sampleids[1].str.split("-", expand=True)[0]
+    sampleids = lcms_lipid.sample_name.str[len("Gates_Mtb_"):].str.split("_d", expand=True)
 
-    sampleids.columns = ['ptid', 'Visit']
+    sampleids.columns = ['ptid','Visit']
 
-    sampleids['Visit'] = "Day " + sampleids.Visit.str[1:]
-    sampleids['sampleid'] = sampleids.ptid + "|" + sampleids.Visit
+    sampleids.loc[lcms_lipid.sample_type!='Sample','ptid'] = np.nan
+    sampleids.loc[lcms_lipid.sample_type!='Sample','Visit'] = np.nan
+
+    sampleids['Visit'] = sampleids.Visit.str.split("_", expand=True)[0]
+
+    sampleids.Visit.unique()
+
+    # correct labeling issue
+    sampleids.loc[sampleids.ptid=='6657','Visit'] = sampleids.loc[sampleids.ptid=='6657'].Visit.map({'0-1':'37','0-2':'0'})
+    sampleids['Visit'] = "Day " + sampleids.Visit
+
+    sampleids['sampleid'] = sampleids['ptid'] + "|" + sampleids['Visit']
 
     lcms_lipid = pd.concat([lcms_lipid, sampleids], axis=1)
 

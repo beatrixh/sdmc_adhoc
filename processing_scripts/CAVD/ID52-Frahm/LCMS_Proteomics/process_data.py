@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 02/25/2025
+# Date: 03/11/2025
 # Purpose: Process LCMS Proteomics data. Create qdata + adata
 ## ---------------------------------------------------------------------------##
 
@@ -48,15 +48,19 @@ def main():
 
     ## merge on sampleid columns----------------------------------------------##
     sampleids = df.sample_name.str.replace("-","_").str.split("_d", expand=True)
+    sampleids.columns = ['ptid','Visit']
+
+    # correct labeling issue
+    sampleids.loc[sampleids.ptid=='6657_1', 'Visit'] = '37'
+    sampleids.loc[sampleids.ptid=='6657_2', 'Visit'] = '0'
 
     # grab everything from the first column before "_"
-    sampleids[0] = sampleids[0].str.split("_", expand=True)[0]
+    sampleids.ptid = sampleids.ptid.str.split("_", expand=True)[0]
 
     #grab everything from the second column before "_"
-    sampleids[1] = sampleids[1].str.split("_", expand=True)[0]
+    sampleids['Visit'] = sampleids.Visit.str.split("_", expand=True)[0]
 
-    sampleids[1] = "Day " + sampleids[1]
-    sampleids.columns = ['ptid','Visit']
+    sampleids['Visit'] = "Day " + sampleids.Visit
     sampleids['sampleid'] = sampleids.ptid + "|" + sampleids.Visit
 
     df = pd.concat([df, sampleids], axis=1)
@@ -125,7 +129,7 @@ def main():
 
     ## pivot summary ---------------------------------------------------------##
     # summary = pd.pivot_table(df,
-    #                index='Antigen',
+    #                index='Peptide',
     #                columns=['ptid','Visit'],
     #                aggfunc='count',
     #                fill_value=0
