@@ -15,16 +15,20 @@ import sdmc_tools.constants as constants
 
 def main():
     # compare the previous upload to this one --------------------------------##
-    # input_data_path = '/trials/vaccine/p135/s001/qdata/LabData/PVMA_pass-through/20250321_HVTN135_DataSummary_V3_MFI and Concentration.xlsx'
-    # data = pd.read_excel(input_data_path)
+    input_data_path = '/trials/vaccine/p135/s001/qdata/LabData/PVMA_pass-through/20250321_HVTN135_DataSummary_V3_MFI and Concentration.xlsx'
+    data = pd.read_excel(input_data_path)
 
-    # old_data_path = '/trials/vaccine/p135/s001/qdata/LabData/PVMA_pass-through/20240822_HVTN135_DataSummary_V2.xlsx'
-    # old = pd.read_excel(old_data_path)
+    old_data_path = '/trials/vaccine/p135/s001/qdata/LabData/PVMA_pass-through/20240822_HVTN135_DataSummary_V2.xlsx'
+    old = pd.read_excel(old_data_path)
 
-    # # verify no changes from prev file
-    # set(data.columns).difference(old.columns)
-    # set(old.columns).difference(data.columns)
-    # data[['Data Type','MFI < 100']].drop_duplicates()
+    # verify no changes from prev file
+    assert set(data.columns).difference(old.columns) == {'Data Type', 'MFI < 100'}, "Unexpected new columns"
+    assert set(old.columns).difference(data.columns) == {'Comments'}, "Unexpected columns dropped"
+
+    new = data[list(set(data.columns).intersection(old.columns))]
+    old = old[list(set(data.columns).intersection(old.columns))]
+
+    assert len(new.drop(columns="HepB (18)").compare(old.drop(columns="HepB (18)"))) == 0, "Changes in data besides HepB"
 
     # looks like the lab-internal labels don't match from 33 onward (off-by-1 error)
 
@@ -210,9 +214,8 @@ def main():
     # this is now a bug in the sdmc-tools adhoc processing pacakge. need to fix
     outputs.loc[outputs.guspec.isna(),'specrole'] = 'Standard'
 
-    drop_cols = ['assay_lab', 'der']
+    drop_cols = ['assay_lab', 'der', 'mfi_<_100']
     outputs = outputs.drop(columns=drop_cols)
-    outputs = outputs.rename(columns={'mfi_<_100':'mfi<100'})
 
     # rename to match the ELISA'd HepB data
     outputs = outputs.rename(columns={'sample_dilution':'dilution'})
@@ -244,7 +247,6 @@ def main():
         'lab_internal_sample_id_20240822_upload',
         'lab_internal_sample_id_20250321_upload',
         'lab_software_version',
-        'mfi<100',
         'plate_number',
         'antigen',
         'beadset_num',
