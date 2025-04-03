@@ -46,10 +46,13 @@ def main():
     input_data_path = '/trials/vaccine/p135/s001/qdata/LabData/PVMA_pass-through/20250321_HVTN135_DataSummary_V3_MFI and Concentration.xlsx'
     data_mfi = pd.read_excel(input_data_path)
 
+    # Sara confirmed via email we can drop these (id is not consistent / thus misleading. upload date confusing and redundant)
+    data_mfi = data_mfi.drop(columns=['Tube Label (WCM Internal Only)','Upload Date'])
+
     # cast MFI data to long
     rename = {
         'GLOBAL_ID':'guspec',
-        'Tube Label (WCM Internal Only)': 'lab_internal_sample_id',
+        # 'Tube Label (WCM Internal Only)': 'lab_internal_sample_id',
         'Plate #': 'plate_number',
         'internal_qc':'lab_internal_qc'
     }
@@ -67,6 +70,9 @@ def main():
     # read in and cast IU data to long ---------------------------------------##
     data_iu = pd.read_excel(input_data_path, sheet_name="Analyzed Concentrations")
     data_iu = data_iu.rename(columns=rename)
+
+    # Sara confirmed via email we can drop these (id is not consistent / thus misleading. upload date confusing and redundant)
+    data_iu = data_iu.drop(columns=['Tube Label (WCM Internal Only)','Upload Date'])
 
     result_cols = [i for i in data_iu.columns if '(' in i]
     non_result_cols = list(set(data_iu.columns).difference(result_cols))
@@ -101,7 +107,7 @@ def main():
         'Sample Dilution'
     ]
 
-    dropcols = ['antigen_string','Data Type', 'Upload Date']
+    dropcols = ['antigen_string','Data Type',]
     data = data_mfi.drop(columns=dropcols).merge(data_iu.drop(columns=dropcols),
                                                          on = mergecols,
                                                          how='outer',
@@ -244,8 +250,6 @@ def main():
         'assay_date',
         'assay_tech',
         'internal_qc',
-        'lab_internal_sample_id_20240822_upload',
-        'lab_internal_sample_id_20250321_upload',
         'lab_software_version',
         'plate_number',
         'antigen',
@@ -258,8 +262,6 @@ def main():
         'result_concentration_units',
         'lloq_concentration',
         'uloq_concentration',
-        'mfi_upload_date',
-        'concentration_upload_date',
         'sdmc_processing_datetime',
         'sdmc_data_receipt_datetime',
         'input_file_name'
