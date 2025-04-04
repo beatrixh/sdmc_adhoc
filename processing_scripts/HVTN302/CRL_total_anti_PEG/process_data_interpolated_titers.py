@@ -28,6 +28,9 @@ def main():
     data['result_interpretation'] = "Positive"
     data.loc[data.result_as_submitted.isin(['Negative Immunodepletion', 'Negative Screen']), 'result_interpretation'] = "Negative"
 
+    data['result'] = data['result_as_submitted']
+    data.loc[data.result_as_submitted.isin(['Negative Titer (<50.000)']), 'result'] = "<50"
+
     ## ldms
     ldms_dir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/specimens/ldms_feed/'
     ldms = pd.read_csv(ldms_dir + np.sort(os.listdir(ldms_dir))[-1], usecols=constants.STANDARD_COLS, dtype=constants.LDMS_DTYPE_MAP)
@@ -53,7 +56,7 @@ def main():
         ldms=ldms
     )
 
-    (pd.to_datetime(outputs.actual_sampling_date) != pd.to_datetime(outputs.drawdt)).sum()
+    # (pd.to_datetime(outputs.actual_sampling_date) != pd.to_datetime(outputs.drawdt)).sum()
 
     ## checks ##
     if sum(outputs.subject.astype(int)!=outputs.ptid.astype(int)) > 0:
@@ -82,6 +85,10 @@ def main():
 
     outputs = outputs.rename(columns=rename)
 
+    # merging on for consistency with original upload
+    outputs['lab_internal_sample_receipt_date'] = '2024-02-22'
+    outputs['analyte'] = "Anti-PEG_Antibodies"
+
     ## reorder
     reorder = [
         'network',
@@ -99,11 +106,14 @@ def main():
         'assay_lab_name',
         'assay_type',
         'instrument',
-        'assay_precision',
-        'result_as_submitted',
-        'result_interpretation',
+        'analyte',
+        'result',
         'result_units',
+        'result_interpretation',
+        'result_as_submitted',
+        'assay_precision',
         'lab_internal_run_id',
+        'lab_internal_sample_receipt_date',
         'sample_id_submitted',
         'sdmc_processing_datetime',
         'sdmc_data_receipt_datetime',
@@ -119,7 +129,7 @@ def main():
     ## save outputs
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/data_processing/'
     today = datetime.date.today().isoformat()
-    fname = f"VTN302_Anti-PEG_total_CRL_interpolated_titers_processed_{today}.txt"
+    fname = f"HVTN302_Anti-PEG_total_CRL_interpolated_titers_processed_{today}.txt"
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
     ## check for completeness against manifest
