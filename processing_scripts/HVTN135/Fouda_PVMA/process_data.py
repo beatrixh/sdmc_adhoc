@@ -227,7 +227,7 @@ def main():
     outputs = outputs.rename(columns={'sample_dilution':'dilution'})
 
     # excel turned this into a date; fix.
-    outputs.dilution = outputs.dilution.astype(str).str[1:5]
+    outputs.loc[outputs.specrole=="Sample",'dilution'] = outputs.loc[outputs.specrole=="Sample"].dilution.astype(str).str[1:5]
 
     reorder = [
         'network',
