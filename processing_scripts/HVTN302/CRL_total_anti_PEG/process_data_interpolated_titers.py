@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 04/04/2025
+# Date: 04/09/2025
 # Purpose:  - Process updated CRL total anti-PEG data processing
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -12,7 +12,7 @@ import sdmc_tools.constants as constants
 
 ## Read in data --------------------------------------------------------------##
 def main():
-    input_data_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Anti-PEG/HVTN302 20487050 anti-Peg data 10March2025.xls'
+    input_data_path = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Anti-PEG/HVTN302 20487050 anti-Peg data 10March2025r1.xlsx'
     data = pd.read_excel(input_data_path, skiprows=2)
 
     # standardize column format
@@ -20,7 +20,7 @@ def main():
 
     # add guspec column
     data['guspec'] = data.sample_user_text_1.str[3:]
-    data = data.rename(columns={'results_with_extrapolated_titer':'result_as_submitted'})
+    data = data.rename(columns={'results_with_interpolated_titer':'result_as_submitted'})
 
     data['result_units'] = "Titer"
     data.loc[data.result_as_submitted.isin(['Negative Immunodepletion', 'Negative Screen']), 'result_units'] = "N/A"
@@ -30,6 +30,14 @@ def main():
 
     data['result'] = data['result_as_submitted']
     data.loc[data.result_as_submitted.isin(['Negative Titer (<50.000)']), 'result'] = "<50"
+
+    datadir = '/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Anti-PEG/'
+    original = datadir + '20487050 anti-Peg data 13May2024_with Titer_non QC_LB.xls'
+    original = pd.read_excel(original)
+    rerun_guspecs = original.loc[original['IR Result \nText']=='Positive Titer (>6400.000)']['Sample \nUser text 1'].str[3:].tolist()
+
+    data['rerun'] = False
+    data.loc[data.guspec.isin(rerun_guspecs), 'rerun'] = True
 
     ## ldms
     ldms_dir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/specimens/ldms_feed/'
@@ -111,6 +119,7 @@ def main():
         'result_units',
         'result_interpretation',
         'result_as_submitted',
+        'rerun',
         'assay_precision',
         'lab_internal_run_id',
         'lab_internal_sample_receipt_date',
@@ -125,6 +134,51 @@ def main():
         raise Exception("Oops; trying to drop or add columns")
 
     outputs = outputs[reorder]
+
+    ## CHECKS ---------------------------------------------------------------------##
+
+    ## everything with new run id previously was ">6400" --------------------------##
+    previous = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/data_processing/HVTN302_Anti-PEG_total_CRL_interpolated_titers_processed_2025-04-04.txt"
+    previous = pd.read_csv(previous, sep="\t")
+
+    checkcols = ['guspec','lab_internal_run_id']
+    check_runids = outputs[checkcols].merge(previous[checkcols], on='guspec', suffixes=('_new','_previous'))
+    updated_runids = check_runids.loc[check_runids.lab_internal_run_id_new!=check_runids.lab_internal_run_id_previous].guspec.tolist()
+
+    original = datadir + '20487050 anti-Peg data 13May2024_with Titer_non QC_LB.xls'
+    original = pd.read_excel(original)
+    rerun_guspecs = original.loc[original['IR Result \nText']=='Positive Titer (>6400.000)']['Sample \nUser text 1'].str[3:].tolist()
+
+    assert(len(set(updated_runids).symmetric_difference(rerun_guspecs)) == 0), "updated run ids dont match >6400s"
+
+    ## everything is contained in [old endpoint titer, old endpoint titer*2] -----##
+    original['guspec'] = original['Sample \nUser text 1'].str[3:]
+    original['result_numeric'] = original['IR Result \nText'].map({
+        100: 100.,
+        400: 400.,
+        1600: 1600.,
+        'Positive Titer (>6400.000)': 6400.,
+        3200: 3200.,
+        'Negative Screen': np.nan,
+        'Negative Titer (<50.000)': 25.,
+        800: 800.,
+        200: 200.,
+        'Negative Immunodepletion': np.nan,
+        50: 50.
+    })
+
+    check_titers = outputs[['guspec','result_as_submitted']].merge(original[['guspec','result_numeric']], on='guspec', how='outer')
+    check_titers.loc[check_titers.result_as_submitted.isin(['Negative Immunodepletion', 'Negative Screen']), 'result_as_submitted'] = np.nan
+    check_titers.loc[check_titers.result_as_submitted=='Negative Titer (<50.000)', 'result_as_submitted'] = 25.
+    check_titers.result_as_submitted = check_titers.result_as_submitted.astype(float)
+
+    # this should only have gone down if it was rerun; eg if result numeric == '>6400'
+    result_went_unexpectedly_down = check_titers.loc[(check_titers.result_as_submitted < check_titers.result_numeric) & (check_titers.result_numeric != 6400.)]
+    assert len(result_went_unexpectedly_down) == 0, "result that we're rerun went down, oh no"
+
+    # all results that weren't rerun should have gone up by no more than double
+    result_went_unexpectedly_up_a_lot = check_titers.loc[(check_titers.result_as_submitted > check_titers.result_numeric *2) & (check_titers.result_numeric != 6400.)]
+    assert len(result_went_unexpectedly_up_a_lot) == 0, "result that we're rerun went into a new endpoint titer, oh no"
 
     ## save outputs
     savedir = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/data_processing/'
