@@ -19,7 +19,6 @@ new = pd.read_csv(datadir + "HVTN302_Anti-PEG_total_CRL_interpolated_titers_proc
 old = pd.read_csv(datadir + "archive_2025-04-04/HVTN302_Anti-PEG_total_CRL_processed_2024-07-02.txt", sep="\t")
 
 # table comparing old vs new results as submitted ----------------------------##
-
 compare = new[['guspec','ptid','visitno','result_as_submitted']].merge(
     old[['guspec','result_as_submitted']],
     on='guspec',
@@ -28,10 +27,10 @@ compare = new[['guspec','ptid','visitno','result_as_submitted']].merge(
     '_new','_old')
 )
 
-compare = compare.rename(columns={'result_as_submitted_new':'interpolated_result_2025_04_09',
-                        'result_as_submitted_old':'endpoint_titer_original_2024_07_02'})
-                        compare.to_csv("/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/HVTN302_Anti-PEG_total_original_versus_rerun_interpolated_titers.txt", sep="\t")
+compare = compare.loc[compare.result_as_submitted_old=="Positive Titer (>6400.000)"].drop(columns='result_as_submitted_old')
+compare = compare.rename(columns={'result_as_submitted_new':'interpolated_result_2025_04_09'})
 
+compare.to_csv("/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/HVTN302_Anti-PEG_total_rerun_interpolated_titers.txt", sep="\t")
 # scatterplot ----------------------------------------------------------------##
 
 # merge together
