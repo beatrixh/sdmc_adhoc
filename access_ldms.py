@@ -81,6 +81,7 @@ def pull_protocol_map() -> dict:
     which_to_use.loc[which_to_use.Schema=="hvtn139_dummy_arm", 'Use'] = True
     which_to_use.loc[which_to_use.Schema=="hvtn312_dummy_arm", 'Use'] = True
     which_to_use.loc[which_to_use.Schema=="hvtn605_dummy_arm", 'Use'] = True
+    which_to_use.loc[which_to_use.Schema=="hvtn320_dummy_arm", 'Use'] = True
 
     # # add in HVTN503.1
     # which_to_use.loc[len(which_to_use)] = ['hvtn503.1', 'hvtn503_1', True]
