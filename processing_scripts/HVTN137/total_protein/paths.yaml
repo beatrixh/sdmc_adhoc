@@ -1,0 +1,3 @@
+input_data_path: /trials/vaccine/p137/s001/qdata/LabData/BAMA_Mucosal/total_protein_pass-through/HVTN137_Mucosal_Total_Protein_20250331_A.txt
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN137/assays/total_protein/misc_files/data_processing/
+output_prefix: HVTN137_total_protein_processed
