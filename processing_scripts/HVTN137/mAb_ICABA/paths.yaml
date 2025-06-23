@@ -1,0 +1,3 @@
+input_data_path: /trials/vaccine/p137/s001/qdata/LabData/Ferrari_ICABA_pass-through/Ferrari_HVTN 137_mAbs_ICABA_Analysis_20JUN25.csv
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN137/assays/ICABA/misc_files/data_processing_mAb/
+output_prefix: HVTN137_mAb_ICABA_processed
