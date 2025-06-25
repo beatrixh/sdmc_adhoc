@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 06/24/2025
+# Date: 06/25/2025
 # Purpose:  Ad hoc data processing of mAb ICABA data from Ferrari lab
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -21,7 +21,7 @@ def main():
 
     ## rename columns and merge ----------------------------------------------##
     data = data.rename(columns={"sample_id":"mab_id",
-                            'imc':'virus_id',
+                            'IMC':'virus_id',
                             'Mock%IgG+': 'result_Mock%IgG+',
                             '%p24+IgG+': 'result_%p24+IgG+',
                             'MockSubtracted %p24+IgG+': 'result_MockSubtracted %p24+IgG+',
@@ -57,6 +57,7 @@ def main():
         'instrument': 'Fortessa Flow Cytometer',
         'assay_type': 'ICABA',
         'specrole': 'Sample',
+        'spectype': 'Monoclonal antibody',
         'result_units': 'Percent',
     }
 
@@ -72,6 +73,7 @@ def main():
         'network',
         'protocol',
         'specrole',
+        'spectype',
         'mab_id',
         'upload_lab_id',
         'assay_lab_name',
