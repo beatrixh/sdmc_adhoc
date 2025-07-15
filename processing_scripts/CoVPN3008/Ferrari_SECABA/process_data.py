@@ -1,15 +1,18 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 10/11/2024
+# Date: 07/15/2025
 # Purpose:  - Process SECABA data from Ferrari lab
 ## ---------------------------------------------------------------------------##
 import pandas as pd
+import numpy as np
 import datetime, os
 import yaml
 import sdmc_tools.process as sdmc
 import sdmc_tools.constants as constants
+import sdmc_tools.access_ldms as access_ldms
 
 def main():
+    # read in data
     secaba_analysis_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-10-11.csv"
     secaba_metadata_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-09-23.csv"
 
@@ -39,15 +42,13 @@ def main():
         'result_units': 'Percent',
     }
 
-    ldms = pd.read_csv(
-        constants.LDMS_PATH_COVPN,
-        usecols=constants.STANDARD_COLS,
-        dtype=constants.LDMS_DTYPE_MAP
-    )
-    ldms = ldms.loc[ldms.lstudy==3008.]
-    ldms = ldms.loc[ldms.guspec.isin(data.guspec)]
+    # pull in ldms
+    ldms = access_ldms.pull_one_protocol('covpn', 3008)
 
+    ldms = ldms.loc[ldms.guspec.isin(data.guspec)]
+    ldms.lstudy = ldms.lstudy.astype(int)
     ldms.txtpid = ldms.txtpid.astype(str).astype(int)
+
     ldms = ldms.drop_duplicates()
 
     outputs = sdmc.standard_processing(
@@ -94,14 +95,25 @@ def main():
         'input_file_name',
         'input_metadata_file_name',
     ]
-    set(reorder).symmetric_difference(outputs.columns)
+    assert(len(set(reorder).symmetric_difference(outputs.columns))==0)
+    outputs = outputs[reorder]
 
+    # make sure matches previous format
+    outputs.protocol = outputs.protocol.astype(int)
+    outputs.ptid = outputs.ptid.astype(int)
+    outputs.visitno = outputs.visitno.astype(float)
+
+    # save to .txt
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/data_processing/"
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     fname = f"CoVPN3008_Ferrari_SECABA_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")
 
+    old = pd.read_csv(savedir + '/archive_2025_07_15/CoVPN3008_Ferrari_SECABA_processed_2024-10-11.txt', sep="\t")
+    diff = outputs.compare(old)
+    diff['visitno'].dropna()
 
+    ## pivot summaries
     detail_summary = pd.pivot_table(
         outputs,
         index=['ptid','visitno'],
@@ -109,7 +121,6 @@ def main():
         aggfunc='count',
         fill_value=0,
     )[['background_subtracted_pct_igg+']].droplevel(level=0, axis=1)
-
     detail_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno_dilution_isotype.xlsx")
 
     simple_summary = pd.pivot_table(
@@ -119,9 +130,9 @@ def main():
         aggfunc='count',
         fill_value=0
     )[['background_subtracted_pct_igg+']]
-
     simple_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno.xlsx")
 
+    # check background subtraction
     check = outputs['transfected_pct_igg+'] - outputs['mock_pct_igg+']
     check[check < 0] = 0
 
@@ -132,6 +143,7 @@ def main():
 
     # np.abs(check - data1011['Background subtracted %IgG+']).max()
 
+    ## additional checks
     manifest_path = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/CoVPN_shipping_manifest.txt"
     manifest = pd.read_csv(manifest_path, sep="\t")
 
@@ -140,6 +152,8 @@ def main():
 
     manifest_ids = set(manifest2.loc[manifest2.PROTOCOL==3008.].GLOBAL_ID).union(manifest.GLOBAL_ID)
     check = manifest_ids.symmetric_difference(outputs.guspec)
+
+    assert(len(check)==0)
 
     # len(set(outputs.guspec).difference(manifest.GLOBAL_ID))
     # outputs.guspec.nunique()
@@ -151,16 +165,16 @@ def main():
     # for_nick["in_manifest"] = for_nick.guspec.isin(manifest.GLOBAL_ID)
     # for_nick.in_manifest.sum()
 
-    savepath = "/networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/CoVPN3008_Ferrari_samples.txt"
-    for_nick.to_csv(savepath, sep="\t", index=False)
+    # savepath = "/networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/CoVPN3008_Ferrari_samples.txt"
+    # for_nick.to_csv(savepath, sep="\t", index=False)
 
-    # visitno per samples in manifest
-    outputs.loc[outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
+    # # visitno per samples in manifest
+    # outputs.loc[outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
 
-    # visitno per samples not in manifest
-    outputs.loc[~outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
+    # # visitno per samples not in manifest
+    # outputs.loc[~outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
 
-    outputs.loc[outputs.guspec.isin(list(set(outputs.guspec).difference(manifest.GLOBAL_ID)))]
+    # outputs.loc[outputs.guspec.isin(list(set(outputs.guspec).difference(manifest.GLOBAL_ID)))]
 
     # data1011 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-10-11.csv")
     # metadata0923 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-09-23.csv")
@@ -174,13 +188,11 @@ def main():
     # data0612.compare(data0923)
     # data0923.compare(data1011)
 
-    # data1011.head()
 
+    # check = data1011['Transfected %IgG+'] - data1011['Mock %IgG+']
+    # check[check < 0] = 0
 
-    check = data1011['Transfected %IgG+'] - data1011['Mock %IgG+']
-    check[check < 0] = 0
-
-    np.abs(check - data1011['Background subtracted %IgG+']).max()
+    # np.abs(check - data1011['Background subtracted %IgG+']).max()
 
 if __name__ == '__main__':
     main()
