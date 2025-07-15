@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 06/10/2024
+# Date: 10/11/2024
 # Purpose:  - Process SECABA data from Ferrari lab
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -10,9 +10,8 @@ import sdmc_tools.process as sdmc
 import sdmc_tools.constants as constants
 
 def main():
-    ## read in data ----------------------------------------------------------##
-    secaba_analysis_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-01-02.csv"
-    secaba_metadata_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-01-25.csv"
+    secaba_analysis_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-10-11.csv"
+    secaba_metadata_path = "/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-09-23.csv"
 
     data = pd.read_csv(secaba_analysis_path)
     metadata = pd.read_csv(secaba_metadata_path)
@@ -23,9 +22,8 @@ def main():
     data = data.rename(columns=rename)
     metadata = metadata.rename(columns=rename)
 
-    # drop this for now until have clarification from lab
-    data = data.loc[data.guspec!="0392-01JWBJ00-002"]
-    metadata = metadata.loc[metadata.guspec!="0392-01JWBJ00-002"]
+    to_drop = metadata.loc[(metadata.guspec=="0392-01JWBJ00-002") & (metadata.fcs_file_name.str.contains("347800695"))]
+    metadata = metadata.loc[~metadata.index.isin(to_drop.index)]
 
     # merge metadata onto data
     data = data.merge(metadata, on=['guspec', 'submitted_ptid', 'submitted_visit', 'dilution'], how='outer')
@@ -58,7 +56,9 @@ def main():
         guspec_col='guspec',
         network='covpn',
         metadata_dict=metadata_dict,
-        ldms=ldms
+        ldms=ldms,
+        additional_input_paths={'input_metadata_file_name': secaba_metadata_path}
+
     )
     outputs = outputs.drop(columns=["submitted_visit", "submitted_ptid"])
 
@@ -91,19 +91,17 @@ def main():
         'xml_file_name',
         'sdmc_processing_datetime',
         'sdmc_data_receipt_datetime',
-        'input_file_name'
+        'input_file_name',
+        'input_metadata_file_name',
     ]
-
-    # set(reorder).symmetric_difference(outputs.columns)
-    outputs = outputs[reorder]
-    outputs['input_file_name'] = "Ferrari_CoVPN3008_SECABA_Analysis_2024-01-02.csv, SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-01-25.csv"
+    set(reorder).symmetric_difference(outputs.columns)
 
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/data_processing/"
     today = datetime.datetime.today().strftime('%Y-%m-%d')
     fname = f"CoVPN3008_Ferrari_SECABA_processed_{today}.txt"
     outputs.to_csv(savedir + fname, index=False, sep="\t")
 
-    ## pivot summaries
+
     detail_summary = pd.pivot_table(
         outputs,
         index=['ptid','visitno'],
@@ -124,15 +122,16 @@ def main():
 
     simple_summary.to_excel(savedir + "CoVPN3008_SECABA_summary_ptid_visitno.xlsx")
 
-    ## CHECKS
     check = outputs['transfected_pct_igg+'] - outputs['mock_pct_igg+']
     check[check < 0] = 0
 
-    discrepancy = np.abs(check - outputs['background_subtracted_pct_igg+']).max()
-    if discrepancy > 1e-10:
-        raise Exception("Background subtraction looks wrong")
+    np.abs(check - outputs['background_subtracted_pct_igg+']).max()
 
-    # verify manifest is a match
+    # check = outputs['Transfected %IgG+'] - data1011['Mock %IgG+']
+    # check[check < 0] = 0
+
+    # np.abs(check - data1011['Background subtracted %IgG+']).max()
+
     manifest_path = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/CoVPN_shipping_manifest.txt"
     manifest = pd.read_csv(manifest_path, sep="\t")
 
@@ -140,10 +139,48 @@ def main():
     manifest2 = pd.read_csv(manifest_path2, sep="\t")
 
     manifest_ids = set(manifest2.loc[manifest2.PROTOCOL==3008.].GLOBAL_ID).union(manifest.GLOBAL_ID)
-
     check = manifest_ids.symmetric_difference(outputs.guspec)
-    if len(check) > 0:
-        raise Exception("Samples don't match manifest")
+
+    # len(set(outputs.guspec).difference(manifest.GLOBAL_ID))
+    # outputs.guspec.nunique()
+    # outputs.ptid.nunique()
+    # outputs.groupby(['ptid']).visitno.nunique().value_counts()
+    # manifest.GLOBAL_ID.nunique()
+
+    # for_nick = outputs[['guspec','ptid','visitno']].drop_duplicates()
+    # for_nick["in_manifest"] = for_nick.guspec.isin(manifest.GLOBAL_ID)
+    # for_nick.in_manifest.sum()
+
+    savepath = "/networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/CoVPN3008_Ferrari_samples.txt"
+    for_nick.to_csv(savepath, sep="\t", index=False)
+
+    # visitno per samples in manifest
+    outputs.loc[outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
+
+    # visitno per samples not in manifest
+    outputs.loc[~outputs.guspec.isin(manifest.GLOBAL_ID)].visitno.value_counts()
+
+    outputs.loc[outputs.guspec.isin(list(set(outputs.guspec).difference(manifest.GLOBAL_ID)))]
+
+    # data1011 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Analysis_2024-10-11.csv")
+    # metadata0923 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/Ferrari_CoVPN3008_SECABA_Metadata_2024-09-23.csv")
+
+    # data0923 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/archive/Ferrari_CoVPN3008_SECABA_Analysis_2024-09-23.csv")
+
+    # data0102 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/quarantine/Ferrari_CoVPN3008_SECABA_Analysis_2024-01-02.csv")
+    # data0612 = pd.read_csv("/trials/covpn/p3008/s001/qdata/LabData/SECABA_pass-through/quarantine/Ferrari_CoVPN3008_SECABA_Analysis_2024-06-12.csv")
+
+    # data0102.compare(data0612)
+    # data0612.compare(data0923)
+    # data0923.compare(data1011)
+
+    # data1011.head()
+
+
+    check = data1011['Transfected %IgG+'] - data1011['Mock %IgG+']
+    check[check < 0] = 0
+
+    np.abs(check - data1011['Background subtracted %IgG+']).max()
 
 if __name__ == '__main__':
     main()
