@@ -72,7 +72,8 @@ def main():
         'assay_type': 'IGH Genotyping',
         'assay_subtype':'2x300bp',
         'instrument':'Illumina MiSeq',
-        'lab_software':'IgDiscover'
+        'lab_software':'IgDiscover',
+        'lab_software_version':'IgDiscover22 v1.0.5.',
     }
 
     outputs = sdmc_tools.standard_processing(
@@ -106,6 +107,7 @@ def main():
         'assay_subtype',
         'instrument',
         'lab_software',
+        'lab_software_version',
         'region',
         'gene',
         'allele_1',
