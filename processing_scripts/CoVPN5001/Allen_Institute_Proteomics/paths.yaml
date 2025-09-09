@@ -1,0 +1,3 @@
+input_data_path: "/trials/covpn/p5001/s001/qdata/LabData/proteomics_pass-through/Postcleanup_COVPN_Olink_NPX_Matrix_merged_metadata.csv"
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/data_processing/'
+output_prefix: CoVPN5001_Allen_Institute_Proteomics_Processed
