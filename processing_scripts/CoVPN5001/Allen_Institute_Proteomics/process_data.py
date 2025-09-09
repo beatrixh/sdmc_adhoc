@@ -1,3 +1,8 @@
+## ---------------------------------------------------------------------------##
+# Author: Beatrix Haddock
+# Date: 09/08/2025
+# Purpose: Ad hoc processing of covpn5001 proteomics data
+## ---------------------------------------------------------------------------##
 import pandas as pd
 import numpy as np
 import os
