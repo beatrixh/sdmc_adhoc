@@ -31,7 +31,7 @@ def main():
         value_name='result'
     )
 
-    data = data.rename(columns={'external.subject.ID':'ptid', 'pubid':'lab_internal_pub_id'})
+    data = data.rename(columns={'external.subject.ID':'ptid'})
 
     # read in manifest to get ptid/guspec map
     misc_files_dir = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/'
@@ -122,6 +122,7 @@ def main():
         'protocol',
         'specrole',
         'guspec',
+        'pubid',
         'ptid',
         'visitno',
         'drawdt',
@@ -196,7 +197,6 @@ def main():
         'lab_internal_cohort_id',
         'lab_internal_sample_id',
         'lab_internal_subject_id',
-        'lab_internal_pub_id',
         'slims_gu_id',
         'shipped_from',
         'sdmc_processing_datetime',
@@ -224,5 +224,14 @@ def main():
     )[['result']]
     summary.to_excel(savedir + "covpn5001_allen_inst_proteomics_pivot_summary.xlsx")
 
+    summary2 = pd.pivot_table(
+        outputs,
+        index='ptid',
+        columns='visitno',
+        aggfunc='count',
+        fill_value=0
+    )[['result']]
+
+    summary2.to_excel(savedir + "covpn5001_allen_inst_proteomics_ptid_visitno_pivot_summary.xlsx")
 if __name__=="__main__":
     main()
