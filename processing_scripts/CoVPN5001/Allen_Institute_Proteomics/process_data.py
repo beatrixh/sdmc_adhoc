@@ -211,6 +211,11 @@ def main():
     today = datetime.date.today().isoformat()
     outputs.to_csv(savedir + f"CoVPN5001_Allen_Institute_Proteomics_Processed_{today}.txt", index=False, sep="\t")
 
+    # check that pubid has no typos
+    ptid_map = pd.read_csv('/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/ptid_pubid_mapping.csv')
+    check = data[['ptid','pubid']].merge(ptid_map, left_on='ptid', right_on='SUBJECT', how='left')
+    assert (check.pubid_y!=check.pubid_x).sum() == 0
+
     # qdata_dir = input_data_path.rpartition("/")[0]
     # os.listdir(qdata_dir)
 
