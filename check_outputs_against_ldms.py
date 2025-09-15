@@ -28,8 +28,16 @@ def main():
         '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/GCMS_Metabolomics/GCMS_Metabolomics_processed_2025-03-04.txt',
         '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Metabolomics/LCMS_Metabolomics_processed_2025-03-04.txt',
         '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Proteomics/LCMS_Proteomics_processed_2025-03-11.txt',
-        '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Lipidomics/LCMS_Lipidomics_processed_2025-03-04.txt'
-        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN137/assays/ICABA/misc_files/data_processing_mAb/HVTN137_mAb_ICABA_processed_2025-06-25.txt'
+        '/networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/LCMS_Lipidomics/LCMS_Lipidomics_processed_2025-03-04.txt',
+        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN137/assays/ICABA/misc_files/data_processing_mAb/HVTN137_mAb_ICABA_processed_2025-06-25.txt',
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/data_processing/CoVPN5001_Allen_Institute_Proteomics_Processed_2025-08-26.txt',
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/data_processing/CoVPN5001_Allen_Institute_Proteomics_Processed_2025-09-09_no_ptids.txt',
+        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN301/assays/testing/test_processed_2025-09-09.txt',
+    ]
+
+    DONT_ALERT_BUT_STILL_TO_HANDLE = [
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/SECABA/misc_files/data_processing/CoVPN3008_Ferrari_SECABA_processed_2024-10-11.txt',
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/tranfected_cell_cd107a_degranulation/misc_files/data_processing/DRAFT_CoVPN3008_Ferrari_ADCC_Degranulation_processed_2024-06-06.txt'
     ]
 
     # these are all the pre-2024 files
@@ -50,7 +58,7 @@ def main():
 
     # for each dataset, check against ldms
     results = {}
-    for o in set(output_paths).difference(no_guspec).union(olds):
+    for o in set(output_paths).difference(no_guspec).difference(DONT_ALERT_BUT_STILL_TO_HANDLE).union(olds):
         try:
             results[o] = check_for_ldms_changes(o)
         except Exception as error:
