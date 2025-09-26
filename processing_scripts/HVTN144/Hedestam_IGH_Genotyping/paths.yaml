@@ -1,0 +1,6 @@
+input_data_path:
+ - "/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/GENOTYPES_IGH_FILT.xlsx"
+ - "/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/GENOTYPES_IGK_FILT.xlsx"
+ - "/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/GENOTYPES_IGL_FILT.xlsx"
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN144/assays/genotyping/misc_files/data_processing/'
+output_prefix: HVTN144_Ig_Genotyping_processed
