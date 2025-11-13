@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 11/06/2025
+# Date: 11/10/2025
 # Purpose: Binding
 ## ---------------------------------------------------------------------------##
 import pandas as pd
@@ -19,259 +19,252 @@ import sdmc_tools.access_ldms as access_ldms
     # save etc
 
 def main():
-	# read in data ------------------------------------------------------------##
-	binding_path = '/trials/vaccine/p115/s001/qdata/binding_blocking_pass-through/250930 HVTN115 and 135 post-5 binding summary.xlsx'
-	binding = pd.read_excel(binding_path, sheet_name='summary', skiprows=5)
+    # read in data ------------------------------------------------------------##
+    binding_path = '/trials/vaccine/p115/s001/qdata/binding_blocking_pass-through/250930 HVTN115 and 135 post-5 binding summary.xlsx'
+    binding = pd.read_excel(binding_path, sheet_name='summary', skiprows=5)
 
-	# these should uniquely identify a row
-	assert binding[['Subject ID','Ag letter']].drop_duplicates().shape[0] == len(binding)
+    # these should uniquely identify a row
+    assert binding[['Subject ID','Ag letter']].drop_duplicates().shape[0] == len(binding)
 
-	# cast to long, formatting
-	binding = binding.melt(
-	    id_vars=['Run Date', 'Plate ', 'sample position', 'Ag letter', 'Ag Lot',
-	       'Original ID', 'Date Drawn', 'Infant-Mother Pair Match # (HVTN135)',
-	       'Study ID', 'Group', 'Tx Group',
-	       'Part (HVTN115) or subject type (HVTN135)', 'Pub ID', 'Subject ID',
-	       'Visit', 'Day', 'Ag','Log AUC', 'EC50', 'End Titer'],
-	    value_vars=['_30', '_90', '_270', '_810', '_2430', '_7290',
-	       '_21870', '_65610', '_196830', '_590490', '_1771470', '_5314410'],
-	    value_name='result',
-	    var_name='dilution'
-	)
-	binding.dilution = binding.dilution.str[1:].astype(int)
-	binding['specrole'] = 'Sample'
+    # cast to long, formatting
+    binding = binding.melt(
+        id_vars=['Run Date', 'Plate ', 'sample position', 'Ag letter', 'Ag Lot',
+           'Original ID', 'Date Drawn', 'Infant-Mother Pair Match # (HVTN135)',
+           'Study ID', 'Group', 'Tx Group',
+           'Part (HVTN115) or subject type (HVTN135)', 'Pub ID', 'Subject ID',
+           'Visit', 'Day', 'Ag','Log AUC', 'EC50', 'End Titer'],
+        value_vars=['_30', '_90', '_270', '_810', '_2430', '_7290',
+           '_21870', '_65610', '_196830', '_590490', '_1771470', '_5314410'],
+        value_name='result',
+        var_name='dilution'
+    )
 
-	binding = binding.rename(columns={
-	    'Plate ':'plate_number',
-	    'Original ID':'guspec',
-	})
-	binding.columns = [i.lower().replace(" ","_") for i in binding.columns]
+    binding.dilution = binding.dilution.str[1:].astype(int)
+    binding['specrole'] = 'Sample'
 
-	# read in controls --------------------------------------------------------##
-	controls = pd.read_excel(binding_path, sheet_name='controls', skiprows=3)
-	controls = controls.melt(
-	    id_vars=['Ag letter', 'Plate #', 'Ag lot', 'Ag', 'Control','*Log AUC'],
-	    value_vars=['_100',
-	       '_33.333', '_11.1111', '_3.7037', '_1.2346', '_0.4115', '_0.1372',
-	       '_0.0457', '_0.0152', '_0.0051', '_0.001697', '_0.000564',],
-	    value_name='result',
-	    var_name='control_concentration'
-	)
-	controls = controls.rename(columns={'Control':'control_name'})
-	controls.control_concentration = controls.control_concentration.str[1:].astype(float)
-	controls['control_concentration_units'] = 'ug/ml'
-	controls['specrole'] = 'Standard'
+    binding = binding.rename(columns={
+        'Plate ':'plate_number',
+        'Original ID':'guspec',
+    })
+    binding.columns = [i.lower().replace(" ","_") for i in binding.columns]
 
-	controls = pd.concat([
-	    pd.DataFrame(data={
-	    'specrole':['Background'],
-	    'result':[0.044],}),
-	    controls
-	])
+    # read in controls --------------------------------------------------------##
+    controls = pd.read_excel(binding_path, sheet_name='controls', skiprows=3)
 
-	controls.columns = [i.lower().replace(" ","_") for i in controls.columns]
+    controls = controls.melt(
+        id_vars=['Ag letter', 'Plate #', 'Ag lot', 'Ag', 'Control','*Log AUC'],
+        value_vars=['_100',
+           '_33.333', '_11.1111', '_3.7037', '_1.2346', '_0.4115', '_0.1372',
+           '_0.0457', '_0.0152', '_0.0051', '_0.001697', '_0.000564',],
+        value_name='result',
+        var_name='control_concentration'
+    )
+    controls = controls.rename(columns={'Control':'control_name'})
+    controls.control_concentration = controls.control_concentration.str[1:].astype(float)
+    controls['control_concentration_units'] = 'ug/ml'
+    controls['specrole'] = 'Standard'
 
-	controls = controls.rename(columns={
-	    'plate_#':'plate_number',
-	    '*log_auc':'log_auc',
-	})
+    controls = pd.concat([
+        pd.DataFrame(data={
+        'specrole':['Background'],
+        'result':[0.044],}),
+        controls
+    ])
 
-	data = pd.concat([binding, controls])
+    controls.columns = [i.lower().replace(" ","_") for i in controls.columns]
 
-	# standard formatting -----------------------------------------------------##
-	ldms = access_ldms.pull_multiple_protocols('hvtn', [115, 135])
-	ldms = ldms.loc[ldms.guspec.isin(data.guspec.tolist())]
+    controls = controls.rename(columns={
+        'plate_#':'plate_number',
+        '*log_auc':'log_auc',
+    })
 
-	# standard processing
-	md = {
-	    'network':'HVTN',
-	    'upload_lab_id': 'BH',
-	    'assay_lab_name':'Haynes Lab (Duke)',
-	    'assay_type': 'ELISA',
-	    'assay_subtype':'Binding',
-	    'instrument':'SpectraMax',
-	    'lab_software':'Softmax',
-	    'lab_software_version':'Softmax 5.3',
-	    'result_units':'Absorbance (450 nm)',
-	    'assay_precision':'Quantitative',
-	}
+    data = pd.concat([binding, controls])
 
-	outputs = sdmc_tools.standard_processing(
-	    input_data=data,
-	    input_data_path=binding_path,
-	    guspec_col='guspec',
-	    network='hvtn',
-	    metadata_dict=md,
-	    ldms=ldms
-	)
+    # standard formatting -----------------------------------------------------##
+    ldms = access_ldms.pull_multiple_protocols('hvtn', [115, 135])
+    ldms = ldms.loc[ldms.guspec.isin(data.guspec.tolist())]
 
-	# misc checks -------------------------------------------------------------##
-	# visual check -- for non-na, do these match? yes
-	outputs[['visitno','visit']].drop_duplicates()
+    # standard processing
+    md = {
+        'upload_lab_id': 'BH',
+        'assay_lab_name':'Haynes Lab (Duke)',
+        'assay_type': 'ELISA',
+        'assay_subtype':'Binding',
+        'instrument':'SpectraMax',
+        'lab_software':'Softmax',
+        'lab_software_version':'Softmax 5.3',
+        'result_units':'Absorbance (450 nm)',
+        'assay_precision':'Quantitative',
+    }
 
-	assert len(outputs.loc[(outputs.ptid.notna()) & (outputs.ptid.astype(float)!=outputs.subject_id.astype(float)),['ptid','subject_id']]) == 0
+    outputs = sdmc_tools.standard_processing(
+        input_data=data,
+        input_data_path=binding_path,
+        guspec_col='guspec',
+        network='hvtn',
+        metadata_dict=md,
+        ldms=ldms
+    )
 
-	# visual check -- for non-na, do these match? yes
-	outputs[['study_id','protocol']].drop_duplicates()
+    assert len(outputs.loc[(outputs.ptid.notna()) & (outputs.ptid.astype(float)!=outputs.subject_id.astype(float)),['ptid','subject_id']]) == 0
 
-	# for rows w/out guspec, map protocol from lab submitted data
-	outputs.protocol = outputs.study_id.map({'HVTN115': 115, 'HVTN 135': 135})
-	outputs = outputs.drop(columns=['study_id'])
+    outputs.loc[outputs.guspec.isna(),['specrole']].value_counts()
 
-	checkrows = outputs.loc[(outputs.specrole=='Sample') & (outputs.guspec.notna())]
+    # misc checks -------------------------------------------------------------##
+    # visual check -- for non-na, do these match? yes
+    outputs[['study_id','protocol']].drop_duplicates()
 
-	assert (checkrows.ptid.astype(float)!=checkrows.subject_id.astype(float)).sum() == 0
-	assert (checkrows.visitno.astype(float)!=checkrows.visit.astype(float)).sum() == 0
-	assert len(checkrows.loc[(checkrows.date_drawn.notna()) & (checkrows.drawdt!=checkrows.date_drawn),['drawdt','date_drawn']]) == 0
-	assert len(checkrows.loc[checkrows.ptid.astype(float)!=checkrows.subject_id.astype(float), ['ptid','subject_id']]) == 0
+    # for rows w/out guspec, map protocol from lab submitted data
+    outputs = outputs.drop(columns=['study_id'])
 
-	# reformatting ------------------------------------------------------------##
-	outputs = outputs.drop(columns=['date_drawn'])
+    checkrows = outputs.loc[(outputs.specrole=='Sample')]
 
-	outputs = outputs.drop(columns=['ptid','visitno'])
-	outputs = outputs.rename(columns={
-	    'visit':'visitno',
-	    'subject_id':'ptid'
-	})
+    assert (checkrows.ptid.astype(float)!=checkrows.subject_id.astype(float)).sum() == 0
+    assert (checkrows.visitno.astype(float)!=checkrows.visit.astype(float)).sum() == 0
+    assert len(checkrows.loc[(checkrows.date_drawn!=checkrows.drawdt) & (checkrows.date_drawn.notna()),['date_drawn','drawdt']]) == 0
+    assert len(checkrows.loc[checkrows.ptid.astype(float)!=checkrows.subject_id.astype(float), ['ptid','subject_id']]) == 0
 
-	outputs = outputs.rename(columns={
-	    'ag':'analyte',
-	    'ag_letter':'analyte_letter',
-	    'ag_lot':'analyte_lot'
-	})
+    # reformatting ------------------------------------------------------------##
+    outputs = outputs.drop(columns=['date_drawn','subject_id','visit'])
 
-	outputs = outputs.drop(columns=[
-	    'pub_id',
-	    'day',
-	    'infant-mother_pair_match_#_(hvtn135)',
-	    'part_(hvtn115)_or_subject_type_(hvtn135)',
-	    'group',
-	    'tx_group',
-	    'analyte_letter',
-	])
+    outputs = outputs.rename(columns={
+        'ag':'analyte',
+        'ag_lot':'analyte_lot'
+    })
 
-	reorder = [
-	    'network',
-	    'protocol',
-	    'specrole',
-	    'guspec',
-	    'ptid',
-	    'visitno',
-	    'drawdt',
-	    'run_date',
-	    'spectype',
-	    'spec_primary',
-	    'spec_additive',
-	    'spec_derivative',
-	    'upload_lab_id',
-	    'assay_lab_name',
-	    'assay_type',
-	    'assay_subtype',
-	    'assay_precision',
-	    'instrument',
-	    'lab_software',
-	    'lab_software_version',
-	    'analyte',
-	    'analyte_lot',
-	    'control_name',
-	    'control_concentration',
-	    'control_concentration_units',
-	    'dilution',
-	    'result',
-	    'result_units',
-	    'ec50',
-	    'end_titer',
-	    'log_auc',
-	    'plate_number',
-	    'sample_position',
-	    'sdmc_processing_datetime',
-	    'sdmc_data_receipt_datetime',
-	    'input_file_name',
-	]
+    outputs = outputs.drop(columns=[
+        'pub_id',
+        'day',
+        'infant-mother_pair_match_#_(hvtn135)',
+        'part_(hvtn115)_or_subject_type_(hvtn135)',
+        'group',
+        'tx_group',
+        'ag_letter',
+    ])
 
-	# additional checks -------------------------------------------------------##
+    outputs.loc[outputs.specrole=='Sample','network'] = 'HVTN'
 
-	assert set(outputs.columns).symmetric_difference(reorder) == set()
-	outputs = outputs[reorder]
+    reorder = [
+        'network',
+        'protocol',
+        'specrole',
+        'guspec',
+        'ptid',
+        'visitno',
+        'drawdt',
+        'run_date',
+        'spectype',
+        'spec_primary',
+        'spec_additive',
+        'spec_derivative',
+        'upload_lab_id',
+        'assay_lab_name',
+        'assay_type',
+        'assay_subtype',
+        'assay_precision',
+        'instrument',
+        'lab_software',
+        'lab_software_version',
+        'analyte',
+        'analyte_lot',
+        'control_name',
+        'control_concentration',
+        'control_concentration_units',
+        'dilution',
+        'result',
+        'result_units',
+        'ec50',
+        'end_titer',
+        'log_auc',
+        'plate_number',
+        'sample_position',
+        'sdmc_processing_datetime',
+        'sdmc_data_receipt_datetime',
+        'input_file_name',
+    ]
 
-	## check we still have expected number of ag-ptids
+    assert set(outputs.columns).symmetric_difference(reorder) == set()
+    outputs = outputs[reorder]
 
-	assert len(outputs.loc[outputs.specrole=='Sample',['ptid','analyte']].drop_duplicates()) == 686
+    # additional checks -------------------------------------------------------##
+    ## check we still have expected number of ag-ptids
 
-	# # visual check, ptid/analyte uniquely identifies 686 unique combos
-	# outputs.loc[outputs.specrole=='Sample'].groupby(['ptid','analyte']).count().result.value_counts()
+    assert len(outputs.loc[outputs.specrole=='Sample',['ptid','analyte']].drop_duplicates()) == 686
 
-	# visual check, either sample with protocol == 115/135, or background/standard
-	outputs[['specrole','protocol']].drop_duplicates()
+    # # visual check, ptid/analyte uniquely identifies 686 unique combos
+    # outputs.loc[outputs.specrole=='Sample'].groupby(['ptid','analyte']).count().result.value_counts()
 
-	# # visual check, missing guspecs only for 135 and non-samples
-	# outputs.loc[outputs.guspec.isna(),['protocol','specrole']].drop_duplicates()
+    # visual check, either sample with protocol == 115/135, or background/standard
+    outputs[['specrole','protocol']].drop_duplicates()
 
-	# sara is asking about these, we're dropping for now
-	outputs.loc[(outputs.result.isna()),['specrole','control_name']].drop_duplicates()
+    # visual check, missing guspecs only for non-samples
+    outputs.loc[outputs.guspec.isna(),['protocol','specrole']].drop_duplicates()
 
+    # visual check
+    outputs.loc[outputs.result.isna()].control_name.value_counts()
 
-	# save data and pivot summaries -------------------------------------------##
-	outputs = outputs.loc[outputs.result.notna()]
+    # sara confirmed we should drop these
+    outputs = outputs.loc[outputs.result.notna()]
 
+    # save data and pivot summaries -------------------------------------------##
+    outputs.protocol = outputs.protocol.astype(float)
 
-	outputs115 = outputs.loc[(outputs.protocol==115.) | (outputs.specrole.isin(['Standard','Background']))]
-	outputs135 = outputs.loc[(outputs.protocol==135.) | (outputs.specrole.isin(['Standard','Background']))]
-	# outputs115.specrole.value_counts()
+    outputs115 = outputs.loc[(outputs.protocol==115.) | (outputs.specrole.isin(['Standard','Background']))]
+    outputs135 = outputs.loc[(outputs.protocol==135.) | (outputs.specrole.isin(['Standard','Background']))]
 
-	today = datetime.date.today().isoformat()
-	savedir115 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/data_processing/'
-	outputs115.to_csv(savedir115 + f'HVTN115_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+    today = datetime.date.today().isoformat()
 
-	summary115 = pd.pivot_table(
-	    outputs115,
-	    index=['specrole','ptid','visitno'],
-	    columns=['analyte'],
-	    values='result',
-	    aggfunc='count',
-	    dropna=False
-	)
-	summary115.dropna(how='all').to_excel(savedir115 + "HVTN115_ELISA_bnab_binding_summary.xlsx")
+    # 115
+    savedir115 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/data_processing/'
+    outputs115.to_csv(savedir115 + f'HVTN115_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+    summary115 = pd.pivot_table(
+        outputs115,
+        index=['specrole','ptid','visitno'],
+        columns=['analyte'],
+        values='result',
+        aggfunc='count',
+        dropna=False
+    )
+    summary115.dropna(how='all').to_excel(savedir115 + "HVTN115_ELISA_bnab_binding_summary.xlsx")
 
-	# outputs115.loc[(outputs115.specrole=='Standard') & (outputs.analyte=="CH0505_TF D7gp120/293F/Mon") & (outputs.result.isna())]
-	# outputs115.loc[(outputs115.specrole=='Standard')].groupby('analyte').count()
+    # 135
+    savedir135 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/'
+    outputs135.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+    summary135 = pd.pivot_table(
+        outputs135,
+        index=['specrole','ptid','visitno'],
+        columns=['analyte'],
+        values='result',
+        aggfunc='count',
+        dropna=False,
+    )
+    summary135.dropna(how='all').to_excel(savedir135 + "HVTN135_ELISA_bnab_binding_summary.xlsx")
 
-	savedir135 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/'
-	outputs135.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+    ## final checks -----------------------------------------------------------##
 
-	summary135 = pd.pivot_table(
-	    outputs135,
-	    index=['specrole','ptid','visitno'],
-	    columns=['analyte'],
-	    values='result',
-	    aggfunc='count',
-	    dropna=False,
-	)
-	summary135.dropna(how='all').to_excel(savedir135 + "HVTN135_ELISA_bnab_binding_summary.xlsx")
+    binding_path = '/trials/vaccine/p115/s001/qdata/binding_blocking_pass-through/250930 HVTN115 and 135 post-5 binding summary.xlsx'
+    raw = pd.read_excel(binding_path, sheet_name='summary', skiprows=5)
 
-	## final checks -----------------------------------------------------------##
+    set(raw.loc[raw['Study ID']=='HVTN 135']['Subject ID'].unique()).symmetric_difference(outputs135.ptid.dropna())
 
-	binding_path = '/trials/vaccine/p115/s001/qdata/binding_blocking_pass-through/250930 HVTN115 and 135 post-5 binding summary.xlsx'
-	raw = pd.read_excel(binding_path, sheet_name='summary', skiprows=5)
+    set(raw.loc[raw['Study ID']=='HVTN115']['Subject ID'].unique()).symmetric_difference(outputs115.ptid.dropna())
 
-	outputs135 = pd.read_csv('/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/HVTN135_ELISA_binding_processed_2025-11-06.txt', sep='\t')
-	set(raw.loc[raw['Study ID']=='HVTN 135']['Subject ID'].unique()).symmetric_difference(outputs135.ptid.dropna())
+    # completeness check
+    manifest1 = pd.read_csv(
+        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/manifests/481-373-0000043537.txt',
+        sep='\t'
+    )
+    manifest2 = pd.read_csv(
+        '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/manifests/512--2025000186.txt',
+        sep='\t'
+    )
+    manifest = pd.concat([manifest1, manifest2])
 
-	outputs115 = pd.read_csv('/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/data_processing/HVTN115_ELISA_binding_processed_2025-11-06.txt', sep='\t')
-	set(raw.loc[raw['Study ID']=='HVTN115']['Subject ID'].unique()).symmetric_difference(outputs115.ptid.dropna())
+    # partial match :-/
+    set(manifest.loc[manifest.PROTOCOL==135.].GLOBAL_ID).symmetric_difference(outputs135.guspec)
 
-
-	manifest1 = pd.read_csv(
-	    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/manifests/481-373-0000043537.txt',
-	    sep='\t'
-	)
-	manifest2 = pd.read_csv(
-	    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/manifests/512--2025000186.txt',
-	    sep='\t'
-	)
-	manifest = pd.concat([manifest1, manifest2])
-	set(manifest.loc[manifest.PROTOCOL==135.].GLOBAL_ID).intersection(outputs135.guspec)
-	set(manifest.loc[manifest.PROTOCOL==115.].GLOBAL_ID).symmetric_difference(outputs115.guspec)
+    # full match
+    set(manifest.loc[manifest.PROTOCOL==115.].GLOBAL_ID).symmetric_difference(outputs115.guspec)
 
 if __name__=="__main__":
-	main()
+    main()
