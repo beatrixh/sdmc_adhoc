@@ -1,0 +1,3 @@
+input_data_path: "/networks/cavd/Studies/cvd914/qdata/LabData/NAB/CAVD914_NAB07_U6_20250924.txt"
+savedir: '/networks/vtn/lab/SDMC_labscience/studies/VISC/Ochsenbauer_914/assays/C-C_nAb/misc_files/data_processing/'
+output_prefix: CAVD914_CC_nAb_IC50_80
