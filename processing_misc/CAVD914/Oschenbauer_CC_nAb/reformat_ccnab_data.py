@@ -7,9 +7,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
 import os
 
-titer_estimates = pd.read_csv("/networks/vtn/lab/SDMC_labscience/studies/VISC/Ochsenbauer_914/assays/C-C_nAb/misc_files/interim_data/tobit_titers_2025-11-13.txt", sep='\t')
+titer_estimates = pd.read_csv("/networks/vtn/lab/SDMC_labscience/studies/VISC/Ochsenbauer_914/assays/C-C_nAb/misc_files/interim_data/tobit_titers_2025-11-17.txt", sep='\t')
 
 titer_estimates['titer_numeric'] = titer_estimates.titer.str.replace(">","").str.replace("<","").astype(float)
 titer_estimates['titer_recensored'] = titer_estimates.titer.copy()
@@ -104,8 +105,9 @@ final = final.merge(df[['pubid','isolate']].drop_duplicates(), how='left', on='i
 
 final = final[['isolate','mab_name','pubid','n_replicates','ic50','ic50_recensored','n_replicates_ic50_numeric','ic80','ic80_recensored','n_replicates_ic80_numeric']]
 
+today = datetime.date.today().isoformat()
 cc_dir = "/networks/vtn/lab/SDMC_labscience/studies/VISC/Ochsenbauer_914/assays/C-C_nAb/misc_files/"
-final.to_csv(cc_dir + "data_processing/CAVD914_CC_nAb_IC50_80_2025-11-14.txt", sep="\t", index=False)
+final.to_csv(cc_dir + f"data_processing/CAVD914_CC_nAb_IC50_80_{today}.txt", sep="\t", index=False)
 
 ic50_numeric = final.ic50.str.replace(">","").str.replace("<","").astype(float)
 ic80_numeric = final.ic80.str.replace(">","").str.replace("<","").astype(float)
