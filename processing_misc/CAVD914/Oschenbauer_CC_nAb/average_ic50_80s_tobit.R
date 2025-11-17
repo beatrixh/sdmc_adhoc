@@ -131,9 +131,9 @@ for(iso in levels(df$isolate)){ #isolates/pubids map 1:1
           )
         )
       } else if (any(ss$lod=="<") && !any(ss$lod==">")){
-        # some above threshold, some numeric, none below
+        # some below threshold, some numeric, none above
         n_below <- sum(ss$lod == "<")
-        ss$surv <- Surv(log(ss$val), ifelse(ss$lod=="<", 0, 1))
+        ss$surv <- Surv(log(ss$val), ifelse(ss$lod=="<", 0, 1), type="left")
         fit = survreg(ss$surv~1, dist="gaussian")
         mu = exp(coef(fit))
         titers = rbind(
@@ -181,4 +181,3 @@ write.table(
   row.names=FALSE,
   quote = FALSE
 )
-
