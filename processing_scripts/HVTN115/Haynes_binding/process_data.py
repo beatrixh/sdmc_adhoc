@@ -1,7 +1,10 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
 # Date: 11/12/2025
-# Purpose: Binding
+# Purpose: Process the ELISA binding data for HVTN 135 AND HVTN 115.
+## ---------------------------------------------------------------------------##
+# CAUTION: the lab uploaded additional 135 data that we process and append
+# to these 135 outputs in a different script. See HVTN135 dir within this repo.
 ## ---------------------------------------------------------------------------##
 import pandas as pd
 import numpy as np
