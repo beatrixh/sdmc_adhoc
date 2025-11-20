@@ -31,7 +31,7 @@ def main():
 	    'global_id': 'global_id',
 	    'pbmc_count_at_thaw\xa0': 'cell_count_at_thaw',
 	    'pbmc_viability': 'cell_viability',
-	    'cells_analyzed_per_assay': 'cells_analyzed_per_assay',
+	    'cells_analyzed_per_assay': 'cells_analyzed',
 	    'pol_ca-rna_copies/1e6_pbmcs': 'result_pol_ca-rna',
 	    'polya_ca-rna_copies/1e6_pbmcs': 'result_polya_ca-rna',    
 	}
@@ -40,6 +40,7 @@ def main():
 	# boolean remap
 	carna.sample_quality_issue = carna.sample_quality_issue.map({"N":False})
 	carna.useit = carna.useit.map({"Y":True})
+	carna.loc[carna.deviation_of_testing.isna(),'deviation_of_testing'] = False
 
 	ldms = access_ldms.pull_one_protocol('hvtn', 805)
 	assert set(carna.guspec).union(carna.guspec2).union(carna.guspec3).difference(ldms.guspec).difference({None}) == set()
@@ -56,6 +57,7 @@ def main():
 
 	# standard processing
 	md = metadata.set_index(0)[1].to_dict()
+	md['Specrole'] = 'Sample'
 
 	outputs = sdmc_tools.standard_processing(
 	    input_data=carna,
@@ -93,6 +95,7 @@ def main():
 	reorder = [
 	    'network',
 	    'protocol',
+	    'specrole',
 	    'guspec1',
 	    'guspec2',
 	    'guspec3',
@@ -112,19 +115,20 @@ def main():
 	    'assay_date',
 	    'cell_count_at_thaw',
 	    'cell_viability',
-	    'cells_analyzed_per_assay',
-	    'deviation_of_testing',
+	    'cells_analyzed',
 	    'result_pol_ca-rna',
 	    'result_polya_ca-rna',
 	    'result_units',
 	    'sample_comments',
 	    'sample_quality_issue',
+	    'deviation_of_testing',
 	    'useit',
 	    'sdmc_processing_datetime',
 	    'sdmc_data_receipt_datetime',
 	    'input_file_name',
 	]
 
+	print(set(outputs.columns).symmetric_difference(reorder))
 	assert set(outputs.columns).symmetric_difference(reorder) == set()
 	outputs = outputs[reorder]
 
@@ -148,6 +152,13 @@ def main():
 	summary.to_excel(
 	    savedir + "HVTN805_Accelevir_CA-RNA_summary.xlsx"
 	)
+
+	# check against manifest
+	manifest = pd.read_excel(
+	    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN805_HPTN093/assays/IPDA/misc_files/MANIFEST_SHIP_REQ_0352.xlsx',
+	)
+
+	set(manifest.GLOBAL_ID).symmetric_difference(guspecs_all)
 
 if __name__=="__main__":
 	main()
