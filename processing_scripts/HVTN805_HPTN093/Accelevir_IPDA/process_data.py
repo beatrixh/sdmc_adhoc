@@ -25,9 +25,10 @@ def main():
         'pbmc_count_at_thaw\xa0':'cell_count_at_thaw',
         'pbmc_viability':'cell_viability',
         'total_diploid_genomes_per_assay_(ipdav2.0)':'total_diploid_genomes',
-        'frequency_of_intact_hiv-1_proviruses_per_million_cells_(ipdav2.0)':'result_intact_hiv-1_proviruses',
+        'frequency_of_intact_hiv-1_proviruses_per_million_cells_(ipdav2.0)':'result_intact_proviruses',
         'frequency_of_defective_proviruses_per_million_cells_(ipdav2.0)':'result_defective_proviruses',
-        'frequency_of_total_hiv-1_proviruses_detected_per_million_cells_(ipdav2.0)':'result_total_hiv-1_proviruses',
+        'frequency_of_total_hiv-1_proviruses_detected_per_million_cells_(ipdav2.0)':'result_total_proviruses',
+        'sample_comments':'comments'
     }
     ipda = ipda.rename(columns=col_rename)
 
@@ -113,11 +114,11 @@ def main():
         'cd4+_t_cell_viability',
         'dna_shearing_index',
         'total_diploid_genomes',
-        'result_intact_hiv-1_proviruses',
+        'result_intact_proviruses',
         'result_defective_proviruses',
-        'result_total_hiv-1_proviruses',
+        'result_total_proviruses',
         'result_units',
-        'sample_comments',
+        'comments',
         'sample_quality_issue',
         'deviation_of_testing',
         'useit',
@@ -142,7 +143,7 @@ def main():
         index=['ptid'],
         columns='visitno',
         aggfunc='count',
-        values='result_total_hiv-1_proviruses',
+        values='result_total_proviruses',
         fill_value=0
     )
 

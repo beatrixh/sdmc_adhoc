@@ -32,8 +32,9 @@ def main():
 	    'pbmc_count_at_thaw\xa0': 'cell_count_at_thaw',
 	    'pbmc_viability': 'cell_viability',
 	    'cells_analyzed_per_assay': 'cells_analyzed',
-	    'pol_ca-rna_copies/1e6_pbmcs': 'result_pol_ca-rna',
-	    'polya_ca-rna_copies/1e6_pbmcs': 'result_polya_ca-rna',    
+	    'pol_ca-rna_copies/1e6_pbmcs': 'result_pol',
+	    'polya_ca-rna_copies/1e6_pbmcs': 'result_polya', 
+	    'sample_comments':'comments'   
 	}
 	carna = carna.rename(columns=col_rename)
 
@@ -116,10 +117,10 @@ def main():
 	    'cell_count_at_thaw',
 	    'cell_viability',
 	    'cells_analyzed',
-	    'result_pol_ca-rna',
-	    'result_polya_ca-rna',
+	    'result_pol',
+	    'result_polya',
 	    'result_units',
-	    'sample_comments',
+	    'comments',
 	    'sample_quality_issue',
 	    'deviation_of_testing',
 	    'useit',
@@ -145,7 +146,7 @@ def main():
 	    index=['ptid'],
 	    columns='visitno',
 	    aggfunc='count',
-	    values='result_pol_ca-rna',
+	    values='result_pol',
 	    fill_value=0
 	)
 
