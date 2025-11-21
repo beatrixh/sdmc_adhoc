@@ -264,8 +264,8 @@ def main():
 
 	samples_summary = pd.pivot_table(
 	    outputs_all.loc[(outputs_all.specrole=='Sample') & (outputs_all.dilution==30.)],
-	    index=['ptid','analyte'],
-	    columns=['visitno'],
+	    index=['ptid','visitno'],
+	    columns=['analyte'],
 	    aggfunc='count',
 	    fill_value=0,
 	    dropna=False,
@@ -284,17 +284,17 @@ def main():
 	# Define the file path
 	savedir115 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/data_processing/'
 
-	# # Create an ExcelWriter object
-	# with pd.ExcelWriter(savedir135 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
-	#     # Write each dataframe to a different sheet
-	#     samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
-	#     controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
+	# Create an ExcelWriter object
+	with pd.ExcelWriter(savedir135 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
+	    # Write each dataframe to a different sheet
+	    samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
+	    controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
 
-	# # Create an ExcelWriter object
-	# with pd.ExcelWriter(savedir115 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
-	#     # Write each dataframe to a different sheet
-	#     samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
-	#     controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
+	# Create an ExcelWriter object
+	with pd.ExcelWriter(savedir115 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
+	    # Write each dataframe to a different sheet
+	    samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
+	    controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
 
 if __name__=="__main__":
 	main()
