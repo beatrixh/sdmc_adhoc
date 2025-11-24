@@ -82,7 +82,7 @@ def main():
 
 	# pull ldms
 	ldms = access_ldms.pull_one_protocol('hvtn', 135)
-	ldms = ldms.loc[ldms.guspec.isin(binding.guspec.tolist())]
+	ldms = ldms.loc[ldms.guspec.isin(binding.guspec.tolist())].drop_duplicates()
 
 	# standard processing
 	md = {
@@ -236,7 +236,7 @@ def main():
 
 	today = datetime.date.today().isoformat()
 	savedir135 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/'
-	both_outputs.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+	# both_outputs.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
 
 
 	# read in 115 binding so can create full upload/protocol pivot summary
@@ -249,6 +249,10 @@ def main():
 	    both_outputs, #135
 	    outputs115
 	])
+
+	outputs_all.plate_number = outputs_all.plate_number.astype(str)
+
+	outputs_all = outputs_all.drop_duplicates() # Standards and Background were saved in both 115 and 135
 
 	# # visual confirm that for one ptid-visit-analyte-upload there are always 12 dilutions
 	# outputs_all.loc[outputs_all.specrole=='Sample'].groupby([
@@ -285,16 +289,16 @@ def main():
 	savedir115 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN115/assays/binding_ELISA/misc_files/data_processing/'
 
 	# Create an ExcelWriter object
-	with pd.ExcelWriter(savedir135 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
+	with pd.ExcelWriter(savedir135 + "HVTN115_135_ELISA_binding_summary_2025-11-24.xlsx", engine='openpyxl') as writer:
 	    # Write each dataframe to a different sheet
 	    samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
 	    controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
 
-	# Create an ExcelWriter object
-	with pd.ExcelWriter(savedir115 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
-	    # Write each dataframe to a different sheet
-	    samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
-	    controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
+	# # Create an ExcelWriter object
+	# with pd.ExcelWriter(savedir115 + "HVTN115_135_ELISA_binding_summary.xlsx", engine='openpyxl') as writer:
+	#     # Write each dataframe to a different sheet
+	#     samples_summary.to_excel(writer, sheet_name='Sample summary', index=True) # index=False prevents writing the DataFrame index to Excel
+	#     controls_summary.to_excel(writer, sheet_name='Control summary', index=True)
 
 if __name__=="__main__":
 	main()
