@@ -1,0 +1,4 @@
+input_data_path: /trials/vaccine/p128/s001/qdata/LabData/Specimen_Mass_pass-through/HVTN_128_Biopsy_Mass_GT_20251120_B.xlsx
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN128/assays/mass_biopsy/misc_files/data_processing/
+output_prefix: HVTN128_mass_biopsy_processed
+
