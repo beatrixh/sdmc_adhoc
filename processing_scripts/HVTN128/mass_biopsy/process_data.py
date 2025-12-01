@@ -48,6 +48,7 @@ data = data.rename(columns={
 
 # standard formatting
 md = {
+    'network':'HVTN',
     'upload_lab_id':'GT',
     'assay_lab_name':'Tomaras Lab (Duke)',
     'assay_type':'Specimen Metadata',

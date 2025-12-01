@@ -182,7 +182,7 @@ def main():
 
 	# read in outputs from Nov 12 upload and combine
 	previous = pd.read_csv(
-	    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/HVTN135_ELISA_binding_processed_2025-11-12.txt',
+	    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/HVTN135_ELISA_binding_original_upload_processed_2025-11-12.txt',
 	    sep="\t"
 	)
 
@@ -236,7 +236,7 @@ def main():
 
 	today = datetime.date.today().isoformat()
 	savedir135 = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN135/assays/binding_ELISA/misc_files/data_processing/'
-	# both_outputs.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
+	both_outputs.to_csv(savedir135 + f'HVTN135_ELISA_binding_processed_{today}.txt', sep="\t", index=False)
 
 
 	# read in 115 binding so can create full upload/protocol pivot summary
@@ -264,7 +264,7 @@ def main():
 
 	# these are the same
 	outputs_all.analyte = outputs_all.analyte.str.strip()
-	outputs_all.analyte = outputs_all.analyte.str.replace("strep","Strep")
+	outputs_all.analyte = outputs_all.analyte.str.replace("Strep","strep")
 
 	samples_summary = pd.pivot_table(
 	    outputs_all.loc[(outputs_all.specrole=='Sample') & (outputs_all.dilution==30.)],
