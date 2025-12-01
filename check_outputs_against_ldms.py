@@ -128,6 +128,9 @@ def check_for_ldms_changes(path):
 
     if 'guspec' in df.columns:
         result = check_against_ldms_with_guspec(df)
+    elif 'guspec1' in df.columns:
+        df = df.rename(columns={'guspec1':'guspec'})
+        result = check_against_ldms_with_guspec(df)        
     elif 'guspec_core' in df.columns:
         result = check_against_ldms_with_guspec_core(df)
     else:
