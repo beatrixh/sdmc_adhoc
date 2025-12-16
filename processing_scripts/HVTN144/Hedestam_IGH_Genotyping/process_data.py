@@ -43,7 +43,8 @@ def main():
         return data
 
     datadir = '/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/'
-    datasets = [pd.read_excel(datadir + i, sheet_name=None) for i in os.listdir(datadir)]
+    fnames = [i for i in os.listdir(datadir) if '.xlsx' in i and '$' not in i]
+    datasets = [pd.read_excel(datadir + i, sheet_name=None) for i in fnames]
 
     data = pd.concat([format_data(d) for d in datasets])
 
@@ -154,6 +155,39 @@ def main():
 
     summary0.to_excel(savedir + "HVTN144_Ig_Genotyping_region_summary.xlsx")
     summary2.to_excel(savedir + "HVTN144_Ig_Genotyping_visitno_summary_.xlsx")
+
+
+    # save novel allele sequences to fasta file
+    novels_h = pd.read_excel(datadir + 'GENOTYPES_IGH_FILT.xlsx', sheet_name='Novel_alleles').rename(columns={'IGHV':0})
+    novels_k = pd.read_excel(datadir + 'GENOTYPES_IGK_FILT.xlsx', sheet_name='IGKV_novel_alleles', header=None)
+    novels_l = pd.read_excel(datadir + 'GENOTYPES_IGL_FILT.xlsx', sheet_name='IGLV_Novel_Alleles', header=None)
+
+    novels = pd.concat([novels_h, novels_k, novels_l])
+
+    fasta = novels[0].str.cat(sep="\n")
+
+    with open(savedir + f"HVTN144_genotyping_novel_allele_sequences_{today}.fasta", "w", encoding="utf-8") as f:
+        f.write(fasta)
+
+    ## save deletion list to .txt
+    dels = pd.read_excel(datadir + 'GENOTYPES_IGH_FILT.xlsx', sheet_name='D_region_deletion')
+    deletions = pd.DataFrame(data={
+        'ptid': dels['Cases with probable hemizygous_deletion of IGHD region '].iloc[:13].tolist(),
+        'comment': ['Heterozygous for a SNP associated with the contiguous deletion of the six IGHD genes between IGHD2-2 to IGHD3-9']*13
+    })
+
+    non_dels = list(set(outputs.ptid).difference(deletions.ptid))
+    non_deletions = pd.DataFrame(data = {
+        'ptid': non_dels,
+        'comment': ["Homozygous for a non-deletion variant of the six IGHD genes between IGHD2-2 to IGHD3-9"]*len(non_dels)
+    })
+
+    possible_deletions = pd.concat([deletions, non_deletions]).reset_index(drop=True)
+    possible_deletions.ptid = possible_deletions.ptid.astype(int)
+    possible_deletions['guspec'] = possible_deletions.ptid.map(mfst.set_index('PID').GLOBAL_ID)
+    possible_deletions = possible_deletions[['guspec','ptid','comment']]
+    possible_deletions.to_csv(savedir + f"HVTN144_genotyping_deletions_{today}.txt", sep="\t", index=False)
+
 
 if __name__=="__main__":
     main()
