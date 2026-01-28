@@ -51,7 +51,7 @@ def main():
     })
 
     # reformat data + std processing -----------------------------------------##
-    data = data.drop(columns=["analysis_file_name"])
+    data = data.drop(columns=['analysis_file_name', 'result_MockSubtracted %p24+IgG+'])
     data = data.rename(columns={'xml_file_name':'lab_xml_file_name'})
 
     md = {
@@ -109,7 +109,7 @@ def main():
         'dilution',
         'result_%p24+igg+',
         'result_mock%igg+',
-        'result_mocksubtracted_%p24+igg+',
+        #'result_mocksubtracted_%p24+igg+',
         'result_units',
         'virus_id',
         'virus_stock',
@@ -145,7 +145,7 @@ def main():
     outputs.to_csv(savedir + fname, sep="\t", index=False)
 
     # pivot summary ----------------------------------------------------------##
-    summary = pd.pivot_table(outputs, index='ptid', columns='visitno', aggfunc='count', fill_value=0)['result_mocksubtracted_%p24+igg+']
+    summary = pd.pivot_table(outputs, index='ptid', columns='visitno', aggfunc='count', fill_value=0)['result_mock%igg+']
     summary.to_excel(savedir + "HVTN144_ICABA_summary.xlsx")
 
 if __name__=="__main__":
