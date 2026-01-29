@@ -1,0 +1,3 @@
+input_data_path: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN142/assays/TCRSequencing/misc_files/HVTN_142_sample_prep_infomation.xlsx 
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN142/assays/TCRSequencing/misc_files/data_processing/ 
+output_prefix: HVTN142_TCRSequencing_metadata_file_processed
