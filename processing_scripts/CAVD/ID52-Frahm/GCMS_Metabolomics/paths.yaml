@@ -1,6 +1,5 @@
 input_data_path: /networks/cavd/Objective 4/GH-VAP/ID52-Frahm/Data/OHSU_omics/GatesM72_PNNL_GCMS_Metabolomics_2024_08_FINAL.xlsx
 savedir: /networks/vtn/lab/SDMC_labscience/studies/VISC/ID52-Frahm/omics_misc/misc_files/data_processing/GCMS_Metabolomics/
-output_prefix:
-- DRAFT_GCMS_Metabolomics_processed
+output_prefix: GCMS_Metabolomics_processed
 yaml_path: /home/bhaddock/repos/sdmc-adhoc/processing_scripts/CAVD/ID52-Frahm/GCMS_Metabolomics/paths.yaml
 guspecs: []
