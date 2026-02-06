@@ -11,6 +11,10 @@ import os
 import sys
 
 SAVEPATH = sys.argv[1]
+REMOVE_THESE = [
+    '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/LAB_ASSAY/paths.yaml',
+    '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/TEST_ASSAY/paths.yaml',
+]
 
 def main():
     # find all files in processing_scripts dir
@@ -18,6 +22,11 @@ def main():
 
     # subset to only .yamls, then read them in
     yamls = [i for i in endpoints if i[-4:]=='yaml']
+
+    # hand-pick ones to exclude
+    yamls = list(set(yamls).difference(REMOVE_THESE))
+
+    # read in yamls
     yamls = [read_yaml(y, add_path=False) for y in yamls]
 
     # pull output paths from yamls
@@ -80,13 +89,16 @@ def get_output_path_from_yaml(yaml_dict: dict) -> list:
             yaml_dict['output_prefix'] = [yaml_dict['output_prefix']]
         fnames = []
         for prefix in yaml_dict['output_prefix']:
-            fnames += [np.sort([f for f in files if prefix in f])[-1]]
+            fnames += [np.sort([f for f in files if prefix.lower() in f.lower() and 'process' in f.lower() and 'notes' not in f.lower()])[-1]]
         output_path = yaml_dict['savedir']
         if output_path[-1] != "/":
             output_path += "/"
         return [output_path + f for f in fnames]
     except:
-        return yaml_dict['savedir'] + 'NO MATCH'
+        try:
+            return yaml_dict['savedir'] + 'NO MATCH'
+        except:
+            return 'NO MATCH'
 
 if __name__=="__main__":
     main()
