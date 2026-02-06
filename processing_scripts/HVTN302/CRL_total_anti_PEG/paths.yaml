@@ -1,7 +1,7 @@
 input_data_path: "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Anti-PEG/20487050 anti-Peg data 13May2024_with Titer_non QC_LB.xls"
 savedir: "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/AE_assays/Anti-PEG_total/misc_files/data_processing/"
 output_prefix:
-- "HVTN302_Anti-PEG_total_CRL_processed"
+- "HVTN302_Anti-PEG_total_CRL_interpolated_titers_processed"
 yaml_path: "/home/bhaddock/repos/sdmc-adhoc/processing_scripts/HVTN302/CRL_total_anti_PEG/paths.yaml"
 qdata_path: "/trials/vaccine/p302/s001/qdata/LabData/AE_assays_pass-through/Anti-PEG/processed_by_sdmc/HVTN302_Anti-PEG_total_CRL_processed_2024-05-22.txt"
 guspecs:
