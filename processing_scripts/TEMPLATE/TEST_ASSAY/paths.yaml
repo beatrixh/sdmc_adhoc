@@ -1,0 +1,3 @@
+input_data_path: /networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/thing/input.csv
+savedir: /networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/thing/
+output_prefix: my_output_processed
