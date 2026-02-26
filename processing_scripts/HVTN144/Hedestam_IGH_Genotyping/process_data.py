@@ -162,6 +162,8 @@ def main():
     novels_k = pd.read_excel(datadir + 'GENOTYPES_IGK_FILT.xlsx', sheet_name='IGKV_novel_alleles', header=None)
     novels_l = pd.read_excel(datadir + 'GENOTYPES_IGL_FILT.xlsx', sheet_name='IGLV_Novel_Alleles', header=None)
 
+    # drop the header rows
+    novels_h = novels_h.loc[novels_h[0].str[:3]!="IGH"]
     novels = pd.concat([novels_h, novels_k, novels_l])
 
     fasta = novels[0].str.cat(sep="\n")
