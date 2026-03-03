@@ -154,5 +154,58 @@ def main():
     summary1.to_excel(savedir + "HVTN301_IGH_Genotyping_region_summary.xlsx")
     summary2.to_excel(savedir + "HVTN301_IGH_Genotyping_visitno_summary_.xlsx")
 
+    # save novel alleles to fasta --------------------- ## 
+    # grab novel alleles
+    alleles = outputs.melt(
+        value_vars=[    
+            'allele_1',
+            'allele_2',
+            'allele_3',
+            'allele_4',
+        ],
+        value_name='allele'
+    )['allele'].dropna()
+    alleles = alleles.loc[alleles.str.contains("_S")]
+    alleles = ">" + alleles
+
+    # save novel allele sequences to fasta file
+
+    # novel alleles came in via 144
+    datadir144 = '/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/'
+    novels_h = pd.read_excel(datadir144 + 'GENOTYPES_IGH_FILT.xlsx', sheet_name='Novel_alleles').rename(columns={'IGHV':0})
+    novels_k = pd.read_excel(datadir144 + 'GENOTYPES_IGK_FILT.xlsx', sheet_name='IGKV_novel_alleles', header=None)
+    novels_l = pd.read_excel(datadir144 + 'GENOTYPES_IGL_FILT.xlsx', sheet_name='IGLV_Novel_Alleles', header=None)
+
+    # drop the header rows
+    novels_h = novels_h.loc[novels_h[0].str[:3]!="IGH"]
+    novels = pd.concat([novels_h, novels_k, novels_l])
+    novels = pd.DataFrame(novels.values.reshape(-1, 2), columns=["allele", "seq"])
+
+    # get rid of the ones that arent in the 301 data
+    novels = novels.loc[novels.allele.isin(alleles)]
+    novels = pd.Series(novels.values.reshape(-1))
+
+    # updated alleles identified by ju, sequences from the lab
+    additional = pd.read_excel(
+        "/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/additional_novel_alleles.xlsx",
+        sheet_name=None
+    )
+
+    # these will go in their own file
+    additional_301 = ">" + additional['alleles in 301']['alleles in 301'] + "\n" + additional['alleles in 301']['sequence']
+    additional_301 = additional_301.str.cat(sep="\n")
+
+    # concat original and ones found by ju
+    fasta = novels.str.cat(sep="\n")
+    fasta = fasta + "\n" + additional_301
+
+    # confirm we have everything
+    alleles = alleles.loc[alleles.str.contains("_S")]
+    in_fasta = [i for i in fasta.split("\n") if ">" in i]
+    assert set(alleles).symmetric_difference(in_fasta) == set()
+
+    with open(savedir + f"HVTN301_genotyping_novel_allele_sequences_{today}.fasta", "w", encoding="utf-8") as f:
+        f.write(fasta)
+
 if __name__=="__main__":
     main()
