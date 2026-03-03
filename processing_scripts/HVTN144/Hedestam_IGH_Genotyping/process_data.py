@@ -12,7 +12,7 @@ import datetime as datetime
 import sdmc_tools.process as sdmc_tools
 import sdmc_tools.access_ldms as access_ldms
 
-# def main():
+def main():
     datadir = '/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/'
     
     # cast to long
@@ -44,9 +44,12 @@ import sdmc_tools.access_ldms as access_ldms
         return data
     
     datadir = '/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/'
-    fnames = [i for i in os.listdir(datadir) if '.xlsx' in i and '$' not in i]
+    fnames = [
+        'GENOTYPES_IGH_FILT.xlsx',
+        'GENOTYPES_IGK_FILT.xlsx',
+        'GENOTYPES_IGL_FILT.xlsx'
+    ]
     datasets = [pd.read_excel(datadir + i, sheet_name=None) for i in fnames]
-    
     data = pd.concat([format_data(d) for d in datasets])
     
     mfst1 = pd.read_csv('/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN144/assays/genotyping/misc_files/512--2024000249.txt', sep="\t")
@@ -167,7 +170,7 @@ import sdmc_tools.access_ldms as access_ldms
         
     # updated alleles identified by ju, sequences from the lab
     additional = pd.read_excel(
-        "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN144/assays/genotyping/misc_files/additional_novel_alleles.xlsx",
+        "/trials/vaccine/p144/s001/qdata/LabData/genotyping_pass-through/additional_novel_alleles.xlsx",
         sheet_name=None
     )
         
