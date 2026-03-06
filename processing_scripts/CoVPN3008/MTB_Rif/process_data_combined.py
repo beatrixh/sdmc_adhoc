@@ -157,7 +157,7 @@ def main():
         'instrument': 'P049 Xpert MTB/RIF Ultra', 
         'lab_software': 'GeneXpert Dx',
         'assay_precision': 'Semi-Quantitative',
-        'pipeline_version':'Complex',
+        'sdmc_pipeline_version':'Complex',
     }
 
     # @sara the real guspecs should be merged on here!
@@ -174,11 +174,12 @@ def main():
 
     ## merge on complex outputs ---------------------------------------------------------------------------- ##
 
-    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/DRAFT_MTB_Rif_complex_output_processed_2026-03-04.txt'
+    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/DRAFT_MTB_Rif_complex_output_processed_2026-03-06.txt'
     complex_outputs = pd.read_csv(complex_outputs, sep='\t')
     complex_outputs['pipeline_version'] = 'Simple'
-    complex_outputs['network'] = 'CoVPN'
     outputs = pd.concat([complex_outputs, outputs.drop(columns='fake_placeholder_guspec')])
+
+    # @sara might want to reorder columns
 
     ## save ----------------------------------------------------------------------------------------------- ##
     today = datetime.date.today().isoformat()

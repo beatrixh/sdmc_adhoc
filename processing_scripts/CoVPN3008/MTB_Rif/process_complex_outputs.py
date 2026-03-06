@@ -108,6 +108,7 @@ md = {
     'instrument': 'P049 Xpert MTB/RIF Ultra', # ?
     'lab_software': 'GeneXpert Dx',
     'assay_precision': 'Semi-Quantitative',
+    'sdmc_pipeline_version':'Simple',
 }
 
 data_path1 = "/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008TB_79004_2025.12.22_12.15.02.csv"
@@ -205,6 +206,7 @@ reorder = [
     'error_status',
     'status',
     'user',
+    'sdmc_pipeline_version',
     'sdmc_processing_datetime',
     'sdmc_data_receipt_datetime',
     'input_file_name',
