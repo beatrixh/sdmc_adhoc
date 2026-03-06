@@ -126,7 +126,7 @@ outputs1 = sdmc.standard_processing(
     input_data=df1,
     input_data_path=data_path1,
     guspec_col="FAKE_PLACEHOLDER_GUSPEC",
-    network="HVTN",
+    network="CoVPN",
     metadata_dict=md,
     ldms=ldms
 )
