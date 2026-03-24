@@ -10,9 +10,9 @@ import sdmc_tools.access_ldms as access_ldms
 import sdmc_tools.process as sdmc
 import os
 import datetime
+
 from io import StringIO
 
-## read in data, standard formatting/processing, merge on complex outputs / save
 def main():
     ## read in data
     pdf_dir = '/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/'
@@ -70,9 +70,7 @@ def main():
     # THE MERGE SHOULD ADD ROWS FOR THE PTIDS IN THE PDFS
     assert len(df) - pdfs.sample_id.nunique() + len(pdfs) == len(tmp)
     df = df.merge(pdfs, on=['sample_id','reagent_lot_id'], how='left')
-    
-    df.head()
-    
+        
     # Merge on guspecs
     guspecs = pd.read_csv(datadir + '3008_Global specs.csv')
     
@@ -106,7 +104,7 @@ def main():
         'instrument': 'P049 Xpert MTB/RIF Ultra', 
         'lab_software': 'GeneXpert Dx',
         'assay_precision': 'Semi-Quantitative',
-        'sdmc_pipeline_version':'Complex',
+        'sdmc_pipeline_version':'Simple',
     }
     
     # @sara the real guspecs should be merged on here!
@@ -133,13 +131,16 @@ def main():
     outputs.visitno_y = outputs.visitno_y.astype(float)
     assert (outputs.visitno_x!=outputs.visitno_y).sum() == 1 #0332-02PJVB00-001 has a weird value in the input file
     
+    ldms_discrep = outputs.loc[outputs.visitno_x!=outputs.visitno_y,['guspec','visitno_x','visitno_y']]
+    ldms_discrep = ldms_discrep.rename(columns={'visitno_x':'visitno_ref_sheet', 'visitno_y':'visitno_ldms'})
+    
     outputs = outputs.drop(columns=['ptid_x','visitno_x'])
     outputs = outputs.rename(columns={'ptid_y':'ptid', 'visitno_y':'visitno'})
     
     ## merge on complex outputs ---------------------------------------------------------------------------- ##
-    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/DRAFT_MTB_Rif_complex_output_processed_2026-03-06.txt'
+    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/DRAFT_MTB_Rif_complex_output_processed_2026-03-19.txt'
     complex_outputs = pd.read_csv(complex_outputs, sep='\t')
-    complex_outputs['sdmc_pipeline_version'] = 'Simple'
+    complex_outputs = complex_outputs.drop(columns='assay_categorization_lab')
     
     complex_outputs = complex_outputs.rename(columns={
         'analyte_result':'result_qualitative',
@@ -150,8 +151,9 @@ def main():
         'instrument_s/n':'instrument_serial',
         'probe_check_result':'result_probe_control',
         'expiration_date':'reagent_lot_expiration',
+        'endpt':'result_fi',
     })
-
+    
     # these contain almost the same columns -- no cartridge_index in the simple machine outputs
     # set(reorder).difference(complex_outputs.columns)
     # set(complex_outputs.columns).difference(reorder)
@@ -181,13 +183,11 @@ def main():
         'lab_software_version',
         'sdmc_pipeline_version',
         'analyte_name',
-        'assay_categorization_lab',
         'assay_version',
         'cartridge_index',
         'cartridge_serial',
         'ct',
         'end_time',
-        'endpt',
         'error_status',
         'lab_internal_sample_id_date',
         'module_name',
@@ -198,6 +198,7 @@ def main():
         'result_mtb_interpretation',
         'result_rif_interpretation',
         'result_probe_control',
+        'result_fi',
         'sample_id',
         'start_date_&_time',
         'start_time',
@@ -213,9 +214,83 @@ def main():
     
     outputs = pd.concat([complex_outputs, outputs])
     
-    # @sara might want to reorder columns
+    outputs = outputs.rename(columns={
+        'analyte_name':'target',
+        'reagent_lot_id':'reagent_lot',
+        'start_date_&_time':'start_datetime',
+        'start_time':'test_datetime'
+    })
+    outputs = outputs.drop(columns='end_time')
+    
+    outputs['qc_flag_sdmc'] = False
+    outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc'] = True
+    outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc_detail'] = "This guspec has two different drawdt values in LDMS. Both versions have been included here, so this sample has 12 records instead of 6. We don't know which is correct and are looking into this."
+    
+    reorder = [
+        'network',
+        'protocol',
+        'specrole',
+        'guspec',
+        'ptid',
+        'visitno',
+        'drawdt',
+        'spectype',
+        'spec_primary',
+        'spec_additive',
+        'spec_derivative',
+        'upload_lab_id',
+        'assay_lab_name',
+        'assay_type',
+        'assay_subtype',
+        'assay_kit',
+        'assay_precision',
+        'instrument',
+        'instrument_serial',
+        'lab_software',
+        'lab_software_version',
+        'target',
+        'assay_version',
+        'cartridge_index',
+        'cartridge_serial',
+        'ct',
+        'error_status',
+        'lab_internal_sample_id_date',
+        'module_name',
+        'module_serial',
+        'reagent_lot',
+        'reagent_lot_expiration',
+        'result_qualitative',
+        'result_mtb_interpretation',
+        'result_rif_interpretation',
+        'result_probe_control',
+        'result_fi',
+        'sample_id',
+        'start_datetime',
+        'test_datetime',
+        'status',
+        'test_disclaimer',
+        'test_type',
+        'user',
+        'sdmc_pipeline_version',
+        'qc_flag_sdmc',
+        'qc_flag_sdmc_detail',
+        'sdmc_processing_datetime',
+        'sdmc_data_receipt_datetime',
+        'input_file_name',
+        'input_file_converted_pdf',
+    ]
+    
+    set(reorder).symmetric_difference(complex_outputs.columns)
+    
     assert set(reorder).symmetric_difference(outputs.columns) == set()
     outputs = outputs[reorder]
+    outputs.loc[outputs.guspec.isna(), 'specrole'] = 'Control'
+    
+    usecols = pd.read_excel('/networks/vtn/lab/SDMC_labscience/assays/MTB-Rif/SDMC_materials/DRAFT_qdata_format_MTB-Rif.xlsx')
+    
+    set(usecols.variable_name).difference(outputs.columns)
+    
+    set(reorder).difference(usecols.variable_name)
     
     ## save ----------------------------------------------------------------------------------------------- ##
     today = datetime.date.today().isoformat()
@@ -225,9 +300,38 @@ def main():
     outputs.to_csv(
         savedir + fname, sep='\t', index=False
     )
+    
+    pivot_summary = pd.pivot_table(
+        outputs,
+        index='ptid',
+        columns='visitno',
+        values='result_mtb_interpretation',
+        aggfunc='count',
+        dropna=False
+    ).fillna(0)
+    
+    ldms_discrep = ldms_discrep.merge(outputs.loc[outputs.guspec=="0332-02PJVB00-001",['ptid','drawdt','guspec']], on='guspec')
+    
+    with pd.ExcelWriter(savedir + f'CoVPN3008_MTB_Rif_pivot_summary_{today}.xlsx', engine="openpyxl") as writer:
+        pivot_summary.to_excel(writer, sheet_name="pivot_summary", index=True)
+        ldms_discrep.to_excel(writer, sheet_name="ldms_discrep", index=True)
 
 
-## fn to parse pdf data ---------------------------------------------------------------------------- ##
+# helper fn for rows of data that got combined into one excel cell separated by a "\n"
+def split_row(row):
+    # Split every column on newline
+    split_cols = row.astype(str).str.split("\n")
+    
+    # Determine how many rows this will expand into
+    max_len = split_cols.str.len().max()
+    
+    # Pad shorter splits with None so lengths match
+    split_cols = split_cols.apply(lambda x: x + [None]*(max_len - len(x)))
+    
+    # Convert to DataFrame
+    return pd.DataFrame(dict(zip(row.index, split_cols)))
+
+## parse pdf data ---------------------------------------------------------------------------- ##
 def parse_pdf(pdf_path):
     data = pd.read_excel(
         pdf_path,
@@ -277,7 +381,7 @@ def parse_pdf(pdf_path):
     column_rename = {
         'analyte': 'analyte_name',
         # 'ct': 'ct',
-        'endpoint': 'endpt',
+        'endpoint': 'result_fi',
         'analyte_result': 'result_qualitative',
         # 'result_probe_control': 'result_probe_control',
         # 'sample_id': 'sample_id',
@@ -303,7 +407,7 @@ def parse_pdf(pdf_path):
     df = df.rename(columns=column_rename)
     df.columns = [i.lower().replace(" ","_") for i in df.columns]
     dropcols = [
-        'assay', 'assay_name','test_type'
+        'assay', 'assay_name','test_type', 'assay_categorization_lab'
     ]
     dropcols = list(set(dropcols).intersection(df.columns))
     df = df.drop(columns=dropcols)
@@ -314,21 +418,6 @@ def parse_pdf(pdf_path):
         ], axis=1)
     df['input_file_converted_pdf'] = pdf_path.split("/")[-1]
     return df
-
-# helper fn for rows of data that got combined into one excel cell separated by a "\n"
-def split_row(row):
-    # Split every column on newline
-    split_cols = row.astype(str).str.split("\n")
-    
-    # Determine how many rows this will expand into
-    max_len = split_cols.str.len().max()
-    
-    # Pad shorter splits with None so lengths match
-    split_cols = split_cols.apply(lambda x: x + [None]*(max_len - len(x)))
-    
-    # Convert to DataFrame
-    return pd.DataFrame(dict(zip(row.index, split_cols)))
-
 
 
 if __name__=="__main__":
