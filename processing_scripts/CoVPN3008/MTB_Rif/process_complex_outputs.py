@@ -91,9 +91,6 @@ def process_complex_submission(data_path):
     
     return df
 
-data_path1 = "/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008TB_79004_2025.12.22_12.15.02.csv"
-df1 = process_complex_submission(data_path1)
-
 ldms = access_ldms.pull_one_protocol('covpn', 3008)
 
 md = {
@@ -108,14 +105,24 @@ md = {
     'instrument': 'P049 Xpert MTB/RIF Ultra', # ?
     'lab_software': 'GeneXpert Dx',
     'assay_precision': 'Semi-Quantitative',
-    'sdmc_pipeline_version':'Simple',
+    'sdmc_pipeline_version':'Complex',
 }
 
 data_path1 = "/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008TB_79004_2025.12.22_12.15.02.csv"
 df1 = process_complex_submission(data_path1)
 
-# THIS SHOULD BE REPLACED WITH MERGING ON THE ACTUAL GUSPECS
-df1['FAKE_PLACEHOLDER_GUSPEC'] = '0666-004MZG00-001'
+# Merge on guspecs
+guspecs = pd.read_csv('/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/3008_Global specs.csv')
+guspecs = guspecs.rename(columns={'Global Unique Id':'guspec'})
+guspecs = guspecs.dropna(how='all')
+guspecs.ptid = guspecs.ptid.astype(int).astype(str)
+
+df1['ptid'] = df1['Sample ID'].str[:9]
+df1.ptid = df1.ptid.astype(str)
+
+tmp = df1.merge(guspecs[['guspec','ptid','visitno']], on='ptid', how='left')
+assert len(tmp) == len(df1)
+df1 = df1.merge(guspecs[['guspec','ptid','visitno']], on='ptid', how='left')
 
 df1 = df1.rename(columns={
     'Assay Version':'assay_version',
@@ -126,7 +133,7 @@ df1 = df1.drop(columns=['Assay','Test Type'])
 outputs1 = sdmc.standard_processing(
     input_data=df1,
     input_data_path=data_path1,
-    guspec_col="FAKE_PLACEHOLDER_GUSPEC",
+    guspec_col="guspec",
     network="CoVPN",
     metadata_dict=md,
     ldms=ldms
@@ -137,8 +144,13 @@ outputs1[['result_mtb','result_rif']].drop_duplicates()
 data_path2 = '/trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008_TB Substudy_79001_2025.12.22_12.02.01.csv'
 df2 = process_complex_submission(data_path2)
 
-# THIS SHOULD BE REPLACED WITH MERGING ON THE ACTUAL GUSPECS
-df2['FAKE_PLACEHOLDER_GUSPEC'] = '0666-004MZG00-001'
+# Merge on guspecs
+df2['ptid'] = df2['Sample ID'].str[:9]
+df2.ptid = df2.ptid.astype(str)
+
+tmp = df2.merge(guspecs[['guspec','ptid','visitno']], on='ptid', how='left')
+assert len(tmp) == len(df2)
+df2 = df2.merge(guspecs[['guspec','ptid','visitno']], on='ptid', how='left')
 
 df2 = df2.rename(columns={
     'Assay Version':'assay_version',
@@ -149,15 +161,25 @@ df2 = df2.drop(columns=['Assay','Test Type'])
 outputs2 = sdmc.standard_processing(
     input_data=df2,
     input_data_path=data_path2,
-    guspec_col="FAKE_PLACEHOLDER_GUSPEC",
+    guspec_col="guspec",
     network="HVTN",
     metadata_dict=md,
     ldms=ldms
 )
 
-outputs2[['result_mtb','result_rif']].drop_duplicates()
+# outputs2[['result_mtb','result_rif']].drop_duplicates()
+
+# this one has two rows in ldms
+# ldms.loc[ldms.guspec=="0410-0SYFJA00-001"]
 
 outputs = pd.concat([outputs1, outputs2])
+
+assert len(outputs.loc[(outputs.guspec.notna()) & (outputs.visitno_x!=outputs.visitno_y.astype(float)),['visitno_x','visitno_y']]) == 0
+
+assert len(outputs.loc[(outputs.guspec.notna()) & (outputs.ptid_x.astype(str)!=outputs.ptid_y.astype(str)),['ptid_x','ptid_y']]) == 0
+
+outputs = outputs.drop(columns=['ptid_x','visitno_x'])
+outputs = outputs.rename(columns={'ptid_y':'ptid', 'visitno_y':'visitno'})
 
 # ADD IN ADDITIONAL RENAMING / COLUMN DROPPING HERE
 outputs = outputs.rename(columns={'s/w_version':'lab_software_version'})
@@ -211,11 +233,9 @@ reorder = [
     'sdmc_data_receipt_datetime',
     'input_file_name',
 ]
-set(reorder).symmetric_difference(outputs.columns)
+assert set(reorder).symmetric_difference(outputs.columns) == set()
 
 outputs = outputs[reorder]
-
-outputs[['result_mtb','result_rif']].drop_duplicates()
 
 today = datetime.date.today().isoformat()
 savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/"
