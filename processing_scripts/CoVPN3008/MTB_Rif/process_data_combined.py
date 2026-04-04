@@ -1,9 +1,18 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 03/18/2026
+# Date: 04/03/2026
 # Purpose: Process MTB Rif simple machine outputs/converted pdfs 
 ##         and merge on complex machine outputs
 ## ---------------------------------------------------------------------------##
+import pandas as pd
+import numpy as np
+import sdmc_tools.access_ldms as access_ldms
+import sdmc_tools.process as sdmc
+import os
+import datetime
+
+from io import StringIO
+
 import pandas as pd
 import numpy as np
 import sdmc_tools.access_ldms as access_ldms
@@ -58,7 +67,7 @@ def main():
         'sample_id':'lab_internal_sample_id_date',
         'patient_id':'sample_id'
     })
-    df = df.drop(columns=['assay_name'])
+    df = df.drop(columns=['assay_name','test_type'])
     
     df.reagent_lot_id = df.reagent_lot_id.astype(float)
     pdfs.reagent_lot_id = pdfs.reagent_lot_id.astype(float)
@@ -73,7 +82,6 @@ def main():
         
     # Merge on guspecs
     guspecs = pd.read_csv(datadir + '3008_Global specs.csv')
-    
     guspecs = guspecs.rename(columns={'Global Unique Id':'guspec'})
     guspecs = guspecs.dropna(how='all')
     
@@ -85,10 +93,6 @@ def main():
     assert len(tmp) == len(df)
     df = df.merge(guspecs[['guspec','ptid','visitno']], on='ptid', how='left')
     
-    df[['sample_id','ptid','guspec']].nunique()
-    
-    df[['sample_id','ptid','guspec']].drop_duplicates().shape
-    
     ## standard processing ------------------------------------------------------------------------------- ##
     ldms = access_ldms.pull_one_protocol('covpn', 3008)
     
@@ -99,8 +103,10 @@ def main():
         'upload_lab_id': 'CH',
         'assay_lab_name': 'CHIL',
         'assay_type': 'RT-PCR', 
-        'assay_subtype': 'MTB/Rif',
-        'assay_kit': 'Xpert MTB/RIF Ultra',
+        'assay_subtype': 'Xpert MTB/RIF Ultra',
+        'assay_details':'Assay modified for tongue swab specimens by diluting SR Buffer',
+        'buffer_diluent':'Phosphate Buffered Saline (PBS)',
+        'buffer_dilution':'66%',
         'instrument': 'P049 Xpert MTB/RIF Ultra', 
         'lab_software': 'GeneXpert Dx',
         'assay_precision': 'Semi-Quantitative',
@@ -138,9 +144,9 @@ def main():
     outputs = outputs.rename(columns={'ptid_y':'ptid', 'visitno_y':'visitno'})
     
     ## merge on complex outputs ---------------------------------------------------------------------------- ##
-    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/DRAFT_MTB_Rif_complex_output_processed_2026-03-19.txt'
+    complex_outputs = '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/working_outputs/MTB_Rif_complex_output_processed_2026-04-03.txt'
     complex_outputs = pd.read_csv(complex_outputs, sep='\t')
-    complex_outputs = complex_outputs.drop(columns='assay_categorization_lab')
+    complex_outputs = complex_outputs.drop(columns=['assay_categorization_lab'])
     
     complex_outputs = complex_outputs.rename(columns={
         'analyte_result':'result_qualitative',
@@ -159,66 +165,13 @@ def main():
     # set(complex_outputs.columns).difference(reorder)
     # set(complex_outputs.columns).difference(outputs.columns)
     
-    reorder = [
-        'network',
-        'protocol',
-        'specrole',
-        'guspec',
-        'ptid',
-        'visitno',
-        'drawdt',
-        'spectype',
-        'spec_primary',
-        'spec_additive',
-        'spec_derivative',
-        'upload_lab_id',
-        'assay_lab_name',
-        'assay_type',
-        'assay_subtype',
-        'assay_kit',
-        'assay_precision',
-        'instrument',
-        'instrument_serial',
-        'lab_software',
-        'lab_software_version',
-        'sdmc_pipeline_version',
-        'analyte_name',
-        'assay_version',
-        'cartridge_index',
-        'cartridge_serial',
-        'ct',
-        'end_time',
-        'error_status',
-        'lab_internal_sample_id_date',
-        'module_name',
-        'module_serial',
-        'reagent_lot_id',
-        'reagent_lot_expiration',
-        'result_qualitative',
-        'result_mtb_interpretation',
-        'result_rif_interpretation',
-        'result_probe_control',
-        'result_fi',
-        'sample_id',
-        'start_date_&_time',
-        'start_time',
-        'status',
-        'test_disclaimer',
-        'test_type',
-        'user',
-        'sdmc_processing_datetime',
-        'sdmc_data_receipt_datetime',
-        'input_file_name',
-        'input_file_converted_pdf',
-    ]
-    
     outputs = pd.concat([complex_outputs, outputs])
-    
     outputs = outputs.rename(columns={
         'analyte_name':'target',
         'reagent_lot_id':'reagent_lot',
         'start_date_&_time':'start_datetime',
-        'start_time':'test_datetime'
+        'start_time':'test_datetime',
+        'sample_id':'lab_internal_sample_id',
     })
     outputs = outputs.drop(columns='end_time')
     
@@ -242,7 +195,9 @@ def main():
         'assay_lab_name',
         'assay_type',
         'assay_subtype',
-        'assay_kit',
+        'assay_details',
+        'buffer_diluent',
+        'buffer_dilution',
         'assay_precision',
         'instrument',
         'instrument_serial',
@@ -264,12 +219,11 @@ def main():
         'result_rif_interpretation',
         'result_probe_control',
         'result_fi',
-        'sample_id',
+        'lab_internal_sample_id',
         'start_datetime',
         'test_datetime',
         'status',
         'test_disclaimer',
-        'test_type',
         'user',
         'sdmc_pipeline_version',
         'qc_flag_sdmc',
@@ -280,42 +234,79 @@ def main():
         'input_file_converted_pdf',
     ]
     
-    set(reorder).symmetric_difference(complex_outputs.columns)
+    set(reorder).symmetric_difference(outputs.columns)
     
     assert set(reorder).symmetric_difference(outputs.columns) == set()
     outputs = outputs[reorder]
     outputs.loc[outputs.guspec.isna(), 'specrole'] = 'Control'
+    outputs.result_qualitative = outputs.result_qualitative.replace(["nan","NA"], np.nan)
+    for col in ['instrument_serial','cartridge_serial','ct','module_serial','result_fi','ptid','visitno','lab_software_version']:
+        outputs[col] = outputs[col].astype(float)
     
-    usecols = pd.read_excel('/networks/vtn/lab/SDMC_labscience/assays/MTB-Rif/SDMC_materials/DRAFT_qdata_format_MTB-Rif.xlsx')
     
+    usecols = pd.read_excel("/networks/vtn/lab/SDMC_labscience/assays/Xpert MTB_RIF Ultra/SDMC_materials/DRAFT_qdata_format_MTB-Rif.xlsx")
     set(usecols.variable_name).difference(outputs.columns)
-    
     set(reorder).difference(usecols.variable_name)
+    
+    # DIF CHECK TO SHOW THAT NOTHING CHANGED FROM THE MARCH 31 VERSION OTHER THAN LAB_INTERNAL_SAMPLE_ID
+    outputs_03_31 = pd.read_csv(
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/archive/CoVPN3008_MTB-Rif_combined_output_processed_2026-03-31.txt',
+        sep="\t"
+    )
+    
+    assert set(outputs.columns).symmetric_difference(outputs_03_31.columns) == {'lab_internal_sample_id', 'sample_id'}
+    
+    outputs_03_31 = outputs_03_31.rename(columns={'sample_id':'lab_internal_sample_id'})
+    outputs.ptid = outputs.ptid.astype(float)
+    outputs.visitno = outputs.visitno.astype(float)
+    outputs.lab_software_version = outputs.lab_software_version.astype(float)
+            
+    compare = outputs.reset_index(drop=True).compare(outputs_03_31.reset_index(drop=True))
+    
+    print(compare)
     
     ## save ----------------------------------------------------------------------------------------------- ##
     today = datetime.date.today().isoformat()
     savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/"
-    fname=f"DRAFT_MTB_Rif_combined_output_processed_{today}.txt"
+    fname=f"MTB_Rif_combined_output_processed_{today}.txt"
     
     outputs.to_csv(
         savedir + fname, sep='\t', index=False
     )
     
-    pivot_summary = pd.pivot_table(
-        outputs,
-        index='ptid',
-        columns='visitno',
-        values='result_mtb_interpretation',
-        aggfunc='count',
-        dropna=False
-    ).fillna(0)
+    # pivot_summary = pd.pivot_table(
+    #     outputs,
+    #     index='ptid',
+    #     columns='visitno',
+    #     values='result_mtb_interpretation',
+    #     aggfunc='count',
+    #     dropna=False
+    # ).fillna(0)
     
-    ldms_discrep = ldms_discrep.merge(outputs.loc[outputs.guspec=="0332-02PJVB00-001",['ptid','drawdt','guspec']], on='guspec')
+    # ldms_discrep = ldms_discrep.merge(outputs.loc[outputs.guspec=="0332-02PJVB00-001",['ptid','drawdt','guspec']], on='guspec')
     
-    with pd.ExcelWriter(savedir + f'CoVPN3008_MTB_Rif_pivot_summary_{today}.xlsx', engine="openpyxl") as writer:
-        pivot_summary.to_excel(writer, sheet_name="pivot_summary", index=True)
-        ldms_discrep.to_excel(writer, sheet_name="ldms_discrep", index=True)
+    # with pd.ExcelWriter(savedir + f'CoVPN3008_MTB_Rif_pivot_summary_{today}.xlsx', engine="openpyxl") as writer:
+    #     pivot_summary.to_excel(writer, sheet_name="pivot_summary", index=True)
+    #     ldms_discrep.to_excel(writer, sheet_name="ldms_discrep", index=True)
+    
 
+
+    # manifest check 
+    manifest = pd.read_csv(
+        '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/FH_shipping_manifest.csv',
+    )
+    
+    set(outputs.guspec).difference(manifest['Global Spec ID'])
+    
+    len(set(manifest['Global Spec ID']).difference(outputs.guspec))
+    
+    outputs.guspec.nunique()
+    
+    manifest['guspec_core'] = manifest['Global Spec ID'].str.rpartition("-")[0]
+    
+    outputs['guspec_core'] = outputs.guspec.str.rpartition("-")[0]
+    
+    set(outputs.guspec_core).symmetric_difference(manifest.guspec_core)
 
 # helper fn for rows of data that got combined into one excel cell separated by a "\n"
 def split_row(row):
@@ -418,7 +409,6 @@ def parse_pdf(pdf_path):
         ], axis=1)
     df['input_file_converted_pdf'] = pdf_path.split("/")[-1]
     return df
-
 
 if __name__=="__main__":
     main()

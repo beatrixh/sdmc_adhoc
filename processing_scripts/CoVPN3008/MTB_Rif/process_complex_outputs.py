@@ -100,8 +100,10 @@ md = {
     'upload_lab_id': 'CH',
     'assay_lab_name': 'CHIL',
     'assay_type': 'RT-PCR', # ? Xpert MTB/RIF Ultra?
-    'assay_subtype': 'MTB/Rif',
-    'assay_kit': 'Xpert MTB/RIF Ultra',
+    'assay_subtype': 'Xpert MTB/RIF Ultra',
+    'assay_details':'Assay modified for tongue swab specimens by diluting SR Buffer',
+    'buffer_diluent':'Phosphate Buffered Saline (PBS)',
+    'buffer_dilution':'66%',
     'instrument': 'P049 Xpert MTB/RIF Ultra', # ?
     'lab_software': 'GeneXpert Dx',
     'assay_precision': 'Semi-Quantitative',
@@ -183,6 +185,7 @@ outputs = outputs.rename(columns={'ptid_y':'ptid', 'visitno_y':'visitno'})
 
 # ADD IN ADDITIONAL RENAMING / COLUMN DROPPING HERE
 outputs = outputs.rename(columns={'s/w_version':'lab_software_version'})
+outputs.loc[outputs.guspec.isna(),'specrole'] = "Control"
 
 reorder = [
     'network',
@@ -200,7 +203,9 @@ reorder = [
     'assay_lab_name',
     'assay_type',
     'assay_subtype',
-    'assay_kit',
+    'assay_details',
+    'buffer_diluent',
+    'buffer_dilution',
     'lab_software',
     'lab_software_version',
     'instrument',
@@ -238,9 +243,26 @@ assert set(reorder).symmetric_difference(outputs.columns) == set()
 outputs = outputs[reorder]
 
 today = datetime.date.today().isoformat()
-savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/"
-fname=f"DRAFT_MTB_Rif_complex_output_processed_{today}.txt"
+savedir = "/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/working_outputs/"
+fname=f"MTB_Rif_complex_output_processed_{today}.txt"
 
 outputs.to_csv(
     savedir + fname, sep='\t', index=False
 )
+
+# 4-3-2026 i'm updaing this code to fix the specrole column. this check shows that only specrole and processing date changed:
+compare = pd.read_csv(
+    '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/archive/DRAFT_MTB_Rif_complex_output_processed_2026-03-31.txt',
+    sep="\t"
+)
+
+outputs.ptid = outputs.ptid.astype(float)
+outputs.visitno = outputs.visitno.astype(float)
+outputs.lab_software_version = outputs.lab_software_version.astype(float)
+
+for col in ['assay_version','cartridge_index', 'module_s/n', 'cartridge_s/n', 'instrument_s/n', 'reagent_lot_id']:
+    outputs[col] = outputs[col].astype(int)
+    
+aa = outputs.reset_index(drop=True).compare(compare)
+
+print(aa)
