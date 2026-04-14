@@ -14,10 +14,21 @@ with open(yamlpath, 'r') as file:
     yamldict = yaml.safe_load(file)
 
 def main():
+    YAMLS_TO_IGNORE = [
+        '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/LAB_ASSAY/paths.yaml',
+    ]
     # this is everything since BH joined (jan 2024)
     endpoints = find_endpoints("/home/bhaddock/repos/sdmc-adhoc/processing_scripts", l=[])
     yams = [i for i in endpoints if i[-4:]=="yaml"]
-    output_paths = [get_output_path(i) for i in yams]
+    yams = list(set(yams).difference(YAMLS_TO_IGNORE))
+    output_paths = []
+    errored_yamls = []
+    for i in yams:
+        status, result = get_output_path(i)
+        if status=="PASS":
+            output_paths += [result]
+        else:
+            errored_yamls += [result]
 
     # these are the outputs known to not contain a guspec column; cant check these against ldms
     no_guspec = [
@@ -33,6 +44,7 @@ def main():
         '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/data_processing/CoVPN5001_Allen_Institute_Proteomics_Processed_2025-08-26.txt',
         '/networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN5001/assays/proteomics/misc_files/data_processing/CoVPN5001_Allen_Institute_Proteomics_Processed_2025-09-09_no_ptids.txt',
         '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN301/assays/testing/test_processed_2025-09-09.txt',
+        '/networks/vtn/lab/SDMC_labscience/operations/documents/templates/assay/template_testing/thing/my_output_processed_2025-12-18.txt',
     ]
 
     DONT_ALERT_BUT_STILL_TO_HANDLE = [
@@ -68,6 +80,7 @@ def main():
     mismatches = [i for i in results if results[i]=='mismatch']
     missing_guspecs = [i for i in results if results[i]=='guspec/guspec_core col missing']
     errors = [i for i in results if results[i]=='encountered error']
+    errored_yamls = list(set(errored_yamls).difference(YAMLS_TO_IGNORE))
 
     # write myself an email
     email_text = ''
@@ -91,6 +104,12 @@ def main():
         for m in errors:
             email_text += "\t- " + m + "\n"
 
+    if len(errored_yamls) > 0:
+        if len(email_text)>0:
+            email_text += "\n"
+        email_text += "Not able to find outputs corresponding to these yamls. Couldn't compare against LDMS; please examine:\n"
+        for m in errored_yamls:
+            email_text += "\t- " + m + "\n"
 
     email_subject = "LDMS Monitoring code requires attention"
     if len(mismatches) > 0:
@@ -237,11 +256,19 @@ def check_against_ldms_with_guspec(df):
 def get_output_path(yamlpath):
     y = read_yaml(yamlpath)
     savedir = y['savedir']
+    if savedir is None:
+        print(f"Error -- no savedir found for {yamlpath}")
+        return "ERROR", yamlpath
     files = os.listdir(savedir)
-    outputpath = np.sort([i for i in files if 'process' in i.lower() and '.txt' in i.lower()])[-1]
+    outputpath = np.sort([i for i in files if 'process' in i.lower() and '.txt' in i.lower()])
+    if len(outputpath)>0:
+        outputpath = outputpath[-1]
+    else:
+        print(f"Error -- no outputs found for {yamlpath}")
+        return "ERROR", yamlpath
     if savedir[-1]!="/":
         savedir += "/"
-    return savedir + outputpath
+    return "PASS", savedir + outputpath
 
 def find_endpoints(d: str, l: list) -> list:
     """
