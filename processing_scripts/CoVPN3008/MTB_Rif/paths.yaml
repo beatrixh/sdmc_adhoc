@@ -1,0 +1,14 @@
+input_data_path: 
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/784801133V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/792801574V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/807803673V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/816802568V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/836803289V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/836803582V302.xlsx
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/66_Tests_Exported_2026.01.20_13.21.27.csv
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/68_Tests_Exported_2026.01.20_13.29.00.csv
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008TB_79004_2025.12.22_12.15.02.csv
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/CoVPN3008_TB Substudy_79001_2025.12.22_12.02.01.csv
+  - /trials/covpn/p3008t/s001/qdata/LabData/MTB-Rif_pass-through/3008_Global specs.csv
+savedir: /networks/vtn/lab/SDMC_labscience/studies/CoVPN/CoVPN3008/assays/MTB-Rif/misc_files/data_processing/
+output_prefix: MTB_Rif_combined_output_processed
