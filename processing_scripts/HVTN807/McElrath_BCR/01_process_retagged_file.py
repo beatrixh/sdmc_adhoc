@@ -98,18 +98,20 @@ def process_dataset(input_data_path):
 	outputs = outputs[reorder]
 	outputs = outputs.drop(columns=['Visit','PTID','Global_Spec_ID'])
 
+	outputs.columns = [i.lower().replace(" ","_") for i in outputs.columns]
+
 	return outputs
 
 today = datetime.date.today().isoformat()
 savedir = "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN807/assays/BCR_sequencing/misc_files/data_processing/"
 
 
-# input_data_path="/trials/vaccine/p807/s001/qdata/LabData/BCR_sequencing_pass-through/uploaded_by_lab/Hyrien/20260428-02/20260427_hvtn807_airr.tsv"
-# outputs_long = process_dataset(input_data_path)
-# outputs_long.to_csv(
-#     savedir + f"HVTN807_BCR_sequencing_regenerated_AIRR_long_processed_{today}.txt",
-#     sep="\t", index=False
-# )
+input_data_path="/trials/vaccine/p807/s001/qdata/LabData/BCR_sequencing_pass-through/uploaded_by_lab/Hyrien/20260428-02/20260427_hvtn807_airr.tsv"
+outputs_long = process_dataset(input_data_path)
+outputs_long.to_csv(
+    savedir + f"HVTN807_BCR_sequencing_regenerated_AIRR_long_processed_{today}.txt",
+    sep="\t", index=False
+)
 
 input_data_path="/trials/vaccine/p807/s001/qdata/LabData/BCR_sequencing_pass-through/uploaded_by_lab/Hyrien/20260428-02/20260427_hvtn807_wide.tsv"
 outputs_wide = process_dataset(input_data_path)
