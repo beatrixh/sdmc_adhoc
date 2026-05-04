@@ -1,0 +1,3 @@
+input_data_path: /trials/vaccine/p807/s001/qdata/LabData/ELISA_pass-through/HVTN807 ELISA data.xlsx
+savedir: /networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN807/assays/ELISA/misc_files/data_processing/
+output_prefix: HVTN807_ELISA_processed

@@ -71,6 +71,7 @@ md = {
     'instrument':'',
     'lab_software':'',
     'lab_software_version':'',
+    'result_units':'',
 }
 
 outputs = sdmc.standard_processing(
