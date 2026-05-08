@@ -56,6 +56,8 @@ df = df.loc[df.result.notna()]
 
 df.virus_dilution_maybe = df.virus_dilution_maybe.str[1:-1]
 
+# TODO: fix weird characters in analyte names
+
 # standard processing
 ldms = access_ldms.pull_one_protocol('hvtn', 807)
 
@@ -65,13 +67,14 @@ md = {
     'upload_lab_id':'I6',
     'assay_lab_name':'Stamatatos Lab',
     'assay_type':'ELISA',
-    'assay_subtype':'',
-    'assay_details':'',
-    'assay_precision':'',
-    'instrument':'',
-    'lab_software':'',
-    'lab_software_version':'',
-    'result_units':'',
+    'assay_subtype':'Binding Assay',
+    'assay_details':'Direct', # awaiting confirmation
+    'assay_precision':'Quantitative',
+    'instrument':'SpectraMax M2',
+    'lab_software':'SoftMax Pro',
+    'lab_software_version':'SoftMax Pro 6.2',
+    'result_units':'OD', # awaiting confirmation
+    'input_sheet_name':'',
 }
 
 outputs = sdmc.standard_processing(
