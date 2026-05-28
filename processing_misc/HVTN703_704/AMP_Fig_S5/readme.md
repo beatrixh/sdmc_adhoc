@@ -3,12 +3,15 @@ Beatrix Haddock
 
 The code/outputs in this dir are for the purpose of generating Fig S5 in the AMP manuscript resubmission, that depicts 16 representative sensitive vs resistant curves from 703/704.
 
+See AMP_nAb_curve_Fig_S5_final.ipynb for all inputs used.
+
+## File notes
 
 * code
 	+ AMP_nAb_curve_Fig_S5_final.ipynb: generated final outputs
 	+ develop_AMP_representative_curve_plots_2026-05-27.ipynb: drafting before outputs were finalized
 * outputs 
-	+ AMP_nAb_representative_curves_2026-05-28.pdfPDF version of final fig
+	+ AMP_nAb_representative_curves_2026-05-28.pdf PDF version of final fig
 	+ AMP_nAb_representative_curves_2026-05-28.svg: SVG version of final fig
 	+ HVTN703_704_nAb_pnmle_p0/: first run of monolix pnlme model fitting all 6 replicates simultaneously
 	+ HVTN703_704_nAb_pnmle_p1: second (final) run of monolix pnlme model fitting all 6 replicates simultaneously. This one fixes the population lower limit to zero but allows each isolate to wander.
