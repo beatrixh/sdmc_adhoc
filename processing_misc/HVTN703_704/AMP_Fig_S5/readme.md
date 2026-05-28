@@ -17,5 +17,5 @@ See AMP_nAb_curve_Fig_S5_final.ipynb for all inputs used.
 	+ HVTN703_704_nAb_pnmle_p1/: files from second (final) run of monolix pnlme model fitting all 6 replicates simultaneously. This one fixes the population lower limit to zero but allows each isolate to wander.
 	+ curves_from_atlas.pdf: earlier draft of fig. This one depicts the curves that labkey fit that I could find -- never finalized, one ppt still missing curves, and some look wrong.
 	+ curves_from_atlas_force_lower_limit_0.pdf: earlier draft of fig. This one takes curves_from_atlas and forces the lower limit to be zero. Still has issues.
-	+ monolix_fivepl.txt: the model file used for the monolix model. Note I renamed it since running so to rerun this will have to resource this file.
+	+ monolix_fivepl.txt: the model file used for the monolix model. Note I renamed it since running so to rerun the monolix model, would have to resource this file.
 	+ refit_data_simultaneously.pdf: earlier draft of fig. This uses the published IC50/80s but has my fits from HVTN703_704_nAb_pnmle_p0. I accidentally didn't correct the lower limit from prop space to percentage space in this one.
