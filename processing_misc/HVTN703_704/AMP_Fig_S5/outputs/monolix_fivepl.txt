@@ -1,0 +1,12 @@
+DESCRIPTION:
+
+[LONGITUDINAL]
+input={U, L, m, e, s}
+
+PK:
+
+EQUATION:
+f = U + (L-U)/(1 + (t/e)^m)^s
+
+OUTPUT:
+output = {f}

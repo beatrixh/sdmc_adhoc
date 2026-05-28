@@ -1,0 +1,4 @@
+residuals,statistics,p-value,test
+IWRES_prop_neutralization,0.973928,1.92079e-14,Shapiro-Wilk
+PWRES_prop_neutralization,0.628581,<2.2e-16,Shapiro-Wilk
+NPDE_prop_neutralization,0.978531,2.34373e-12,Shapiro-Wilk

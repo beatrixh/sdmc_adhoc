@@ -1,0 +1,72 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='../../../../data/dilution_level_data.csv'}
+delimiter = comma
+header={Run, Specimen_ID, Participant_ID, Visit_ID, Visit_Date, Dilution, Dilution_Order, Percent_Neutralization, Neutralization_Plus_Minus, Min, Max, Mean, Std_Dev, Wellgroup_Name, Replicate_Name, Min_Dilution, Max_Dilution, Plate_Number, Virus_Name, isolate, Name, pct_neutralization, PLASMID_NAME, pub_id, prop_neutralization}
+
+[CONTENT]
+Dilution = {use=time}
+isolate = {use=identifier}
+prop_neutralization = {use=observation, type=continuous}
+
+<MODEL>
+
+[INDIVIDUAL]
+input = {L_pop, omega_L, U_pop, omega_U, e_pop, omega_e, m_pop, omega_m, s_pop, omega_s}
+
+DEFINITION:
+L = {distribution=logNormal, typical=L_pop, sd=omega_L}
+U = {distribution=logitNormal, max=1.1, typical=U_pop, sd=omega_U}
+e = {distribution=logNormal, typical=e_pop, sd=omega_e}
+m = {distribution=logNormal, typical=m_pop, sd=omega_m}
+s = {distribution=logNormal, typical=s_pop, sd=omega_s}
+
+[LONGITUDINAL]
+input = {a, b}
+
+file = '../../../AMP_curves_p0.txt'
+
+DEFINITION:
+prop_neutralization = {distribution=normal, prediction=f, errorModel=combined1(a, b)}
+
+<FIT>
+data = 'prop_neutralization'
+model = prop_neutralization
+
+<PARAMETER>
+L_pop = {value=0.0000002, method=FIXED}
+U_pop = {value=1.0044307, method=MLE}
+a = {value=0.07592449, method=MLE}
+b = {value=0.000000000000001, method=MLE}
+c = {value=1, method=FIXED}
+e_pop = {value=1.7779304, method=MLE}
+m_pop = {value=0.9309723, method=MLE}
+omega_L = {value=7.524524, method=MLE}
+omega_U = {value=0.000006395688, method=MLE}
+omega_e = {value=1.7167549, method=MLE}
+omega_m = {value=0.1478498, method=MLE}
+omega_s = {value=0.000001066967, method=MLE}
+s_pop = {value=2.0860824, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(method = {conditionalMean, conditionalMode })
+fim(run = false,method = StochasticApproximation)
+logLikelihood(run = false,method = ImportanceSampling)
+
+[PLOTS]
+run = true
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = '../../'
+
+POPULATION:
+exploratoryiterations = 2000
+simulatedannealing = no
+simulatedannealingiterations = 2000
+

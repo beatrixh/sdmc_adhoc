@@ -1,0 +1,73 @@
+********************************************************************************
+*                       HVTN703_704_nAb_pnmle_p1.mlxtran                       *
+*                       May 28, 2026 at 10:23:38                               *
+*                       Monolix version : 2024R1                               *
+********************************************************************************
+
+
+ESTIMATION OF THE POPULATION PARAMETERS ________________________________________
+
+Fixed Effects ----------------------------
+U_pop   :                                1
+L_pop   :                            2e-07
+m_pop   :                             0.93
+e_pop   :                             1.77
+s_pop   :                             2.09
+
+Standard Deviation of the Random Effects -
+omega_U :                         3.72e-07
+omega_L :                             7.68
+omega_m :                            0.132
+omega_e :                             1.72
+omega_s :                         7.77e-08
+
+Error Model Parameters -------------------
+a       :                           0.0758
+b       :                         2.22e-16
+
+Elapsed time (seconds):       12
+Exploratory phase iterations:      365 (Autostop)
+Smoothing phase iterations:        105 (Autostop)
+
+ _______________________________________________________________________________
+
+
+
+ESTIMATION OF THE INDIVIDUAL PARAMETERS ________________________________________
+
+
+Estimation of the individual parameters by Conditional Distribution ------------
+              min            Q1        median            Q3           max  shrinkage(%)
+U :             1             1             1             1             1          88.9
+L :      0.000147       0.00037       0.00111       0.00182        0.0767          51.2
+m :          0.75          0.87         0.923         0.971          1.21          12.7
+e :        0.0623         0.359          3.87           7.9          21.9         -1.93
+s :          2.09          2.09          2.09          2.09          2.09          91.3
+
+Elapsed time (seconds):      1.1
+Iterations:       90 (Autostop)
+
+ -------------------------------------------------------------------------------
+
+
+Estimation of the individual parameters by Conditional Mode --------------------
+              min            Q1        median            Q3           max  shrinkage(%)
+U :             1             1             1             1             1           100
+L :         2e-07         2e-07         2e-07         2e-07        0.0833          53.6
+m :         0.744          0.87         0.921         0.966           1.2          12.6
+e :        0.0618         0.357          3.79           7.7          21.3         -1.76
+s :          2.09          2.09          2.09          2.09          2.09           100
+
+Elapsed time (seconds):    0.054
+
+ -------------------------------------------------------------------------------
+
+ _______________________________________________________________________________
+
+
+
+DATASET INFORMATION
+Number of individuals: 25
+Number of observations (prop_neutralization): 1200
+Number of doses: 0
+

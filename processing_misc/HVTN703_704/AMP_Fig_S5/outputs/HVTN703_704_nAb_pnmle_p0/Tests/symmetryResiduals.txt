@@ -1,0 +1,4 @@
+residuals,statistics,p-value,test
+IWRES_prop_neutralization,0.563785,0.5729,Symmetry
+PWRES_prop_neutralization,-36.1078,<2.2e-16,Symmetry
+NPDE_prop_neutralization,-4.61445,3.94136e-06,Symmetry
