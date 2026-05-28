@@ -1,7 +1,7 @@
 Beatrix Haddock
 2026-05-28
 
-The code/outputs in this dir are for the purpose of generating Fig S5 in the AMP manuscript resubmission, that depicts 16 representative sensitive vs resistant curves from 703/704.
+The code/outputs in this dir are for the purpose of generating Fig S5 for the AMP manuscript resubmission. The fig depicts 16 representative sensitive vs resistant curves from 703/704.
 
 See AMP_nAb_curve_Fig_S5_final.ipynb for all inputs used.
 
