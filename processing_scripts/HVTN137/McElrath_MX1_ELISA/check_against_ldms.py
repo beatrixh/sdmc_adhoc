@@ -52,3 +52,22 @@ assert (outputs.drawdt.astype(str)!=outputs.drawdt_og.astype(str)).sum() == 0
 
 # this was saved as chilled serum, whereas LDMS has serum. this is ok.
 print(outputs.loc[outputs.spectype!=outputs.spectype_og,['spectype','spectype_og']].drop_duplicates())
+
+## save an output so that we can check for changes in LDMS
+outputs['network'] = 'HVTN'
+to_save = outputs[[
+    'network',
+    'protocol',
+    'guspec',
+    'ptid',
+    'drawdt',
+    'spec_primary', 'spec_additive', 'spec_derivative',
+    'visitno',
+    'spectype',
+]]
+
+to_save = to_save.rename(columns={'network_og':'network'})
+to_save = to_save.drop_duplicates().reset_index(drop=True)
+
+savepath="/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN137/assays/ELISA/misc_files/HVTN137_MX1_ELISA_processed_ldms_vals_2026-06-09.txt"
+to_save.to_csv(savepath, sep="\t", index=False)
