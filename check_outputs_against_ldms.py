@@ -187,29 +187,23 @@ def check_against_ldms_with_guspec_core(df):
             df[col] = df[col].astype(str)
             ldms[col] = ldms[col].astype(str)
 
-    df_ldms = df[usecols].drop_duplicates()
 
-    check_outer = df_ldms.merge(ldms, on=usecols, how='outer')
-    check_inner = df_ldms.merge(ldms, on=usecols, how='inner')
-    # nancount = check_outer.sdmc_processing_datetime.isna().sum() + check_inner.sdmc_processing_datetime.isna().sum()
-    # print(len(df_ldms), len(check_outer), len(check_inner))
-    if len(df_ldms)!=len(check_outer) or len(df_ldms)!=len(check_inner):
-        return "mismatch"
+    left = df[usecols].drop_duplicates().sort_values(usecols).reset_index(drop=True)
+    right = ldms[usecols].drop_duplicates().sort_values(usecols).reset_index(drop=True)
+    
+    matches = left.equals(right)
+    if matches:
+        return "looks good"
     else:
-        df_ldms = df_ldms.sort_values(by=usecols).reset_index(drop=True)
-        ldms = ldms.sort_values(by=usecols).reset_index(drop=True)
-
-        equality_check = df_ldms.compare(ldms)
-        if len(equality_check) == 0:
-            return "looks good"
-        else:
-            return "mismatch"
+        return "mismatch"
 
 def check_against_ldms_with_guspec(df):
-    ldms = pd.DataFrame()
-    for i, row in df[['network','protocol']].drop_duplicates().iterrows():
-        s = get_ldms(row.network, row.protocol)
-        ldms = pd.concat([ldms, s])
+    df = df.copy()
+    frames = []
+    for _, row in df[['network','protocol']].drop_duplicates().iterrows():
+        frames.append(get_ldms(row.network, row.protocol))
+    
+    ldms = pd.concat(frames, ignore_index=True)
     ldms = ldms.rename(columns=constants.LDMS_RELABEL_DICT)
     ldms["drawdt"] = ldms.apply(
         lambda x: datetime.date(x.drawdy, x.drawdm, x.drawdd).isoformat(), axis=1
@@ -226,32 +220,23 @@ def check_against_ldms_with_guspec(df):
     ldms = ldms.drop_duplicates()
 
     # cast df types
+    df.protocol = df.protocol.astype(int)
     df.ptid = df.ptid.astype(int)
     df.visitno = df.visitno.astype(float)
-    df.protocol = df.protocol.astype(int)
-    df.drawdt = pd.to_datetime(df['drawdt']).astype(str)
+    df['drawdt'] = pd.to_datetime(df['drawdt']).dt.strftime('%Y-%m-%d')
     for col in ['guspec','spec_primary','spec_additive','spec_derivative']:
         if col in df.columns:
-            df[col] = df[col].astype(str)
-            ldms[col] = ldms[col].astype(str)
+            df[col] = df[col].fillna('').astype(str)
+            ldms[col] = ldms[col].fillna('').astype(str)
 
-    df_ldms = df[usecols].drop_duplicates()
-
-    check_outer = df_ldms.merge(ldms, on=usecols, how='outer')
-    check_inner = df_ldms.merge(ldms, on=usecols, how='inner')
-    # nancount = check_outer.sdmc_processing_datetime.isna().sum() + check_inner.sdmc_processing_datetime.isna().sum()
-    # print(len(df_ldms), len(check_outer), len(check_inner))
-    if len(df_ldms)!=len(check_outer) or len(df_ldms)!=len(check_inner):
-        return "mismatch"
+    left = df[usecols].drop_duplicates().sort_values(usecols).reset_index(drop=True)
+    right = ldms[usecols].drop_duplicates().sort_values(usecols).reset_index(drop=True)
+    
+    matches = left.equals(right)
+    if matches:
+        return "looks good"
     else:
-        df_ldms = df_ldms.sort_values(by=usecols).reset_index(drop=True)
-        ldms = ldms.sort_values(by=usecols).reset_index(drop=True)
-
-        equality_check = df_ldms.compare(ldms)
-        if len(equality_check) == 0:
-            return "looks good"
-        else:
-            return "mismatch"
+        return "mismatch"
 
 def get_output_path(yamlpath):
     y = read_yaml(yamlpath)
