@@ -10,6 +10,7 @@ import sdmc_tools.access_ldms as access_ldms
 import sdmc_tools.process as sdmc
 import os
 import datetime
+import pdb
 
 from io import StringIO
 
@@ -176,8 +177,11 @@ def main():
     outputs = outputs.drop(columns='end_time')
     
     outputs['qc_flag_sdmc'] = False
-    outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc'] = True
-    outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc_detail'] = "This guspec has two different drawdt values in LDMS. Both versions have been included here, so this sample has 12 records instead of 6. We don't know which is correct and are looking into this."
+    #outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc'] = True
+    outputs['drop'] = outputs.apply(lambda row: True if row['guspec']=='0410-0SYFJA00-001' and row['drawdt']=='2024-11-25' else False, axis=1)
+    outputs = outputs[outputs['drop']==False]
+    del outputs['drop']
+    outputs.loc[outputs.guspec=="0410-0SYFJA00-001", 'qc_flag_sdmc_detail'] = "This guspec has two different drawdt values in LDMS. The CHIL team has confirmed that 15 November 2024 is the correct collection date. Because LDMS is no longer being updated for this study, we have dropped the incorrect records during ad hoc processing rather than awaiting LDMS correction."
     
     reorder = [
         'network',
@@ -261,9 +265,9 @@ def main():
     outputs.visitno = outputs.visitno.astype(float)
     outputs.lab_software_version = outputs.lab_software_version.astype(float)
             
-    compare = outputs.reset_index(drop=True).compare(outputs_03_31.reset_index(drop=True))
+    #compare = outputs.reset_index(drop=True).compare(outputs_03_31.reset_index(drop=True))
     
-    print(compare)
+    #print(compare)
     
     ## save ----------------------------------------------------------------------------------------------- ##
     today = datetime.date.today().isoformat()
@@ -274,20 +278,20 @@ def main():
         savedir + fname, sep='\t', index=False
     )
     
-    # pivot_summary = pd.pivot_table(
-    #     outputs,
-    #     index='ptid',
-    #     columns='visitno',
-    #     values='result_mtb_interpretation',
-    #     aggfunc='count',
-    #     dropna=False
-    # ).fillna(0)
+    pivot_summary = pd.pivot_table(
+        outputs,
+        index='ptid',
+        columns='visitno',
+        values='result_mtb_interpretation',
+        aggfunc='count',
+        dropna=False
+    ).fillna(0)
     
     # ldms_discrep = ldms_discrep.merge(outputs.loc[outputs.guspec=="0332-02PJVB00-001",['ptid','drawdt','guspec']], on='guspec')
     
-    # with pd.ExcelWriter(savedir + f'CoVPN3008_MTB_Rif_pivot_summary_{today}.xlsx', engine="openpyxl") as writer:
-    #     pivot_summary.to_excel(writer, sheet_name="pivot_summary", index=True)
-    #     ldms_discrep.to_excel(writer, sheet_name="ldms_discrep", index=True)
+    with pd.ExcelWriter(savedir + f'CoVPN3008_MTB_Rif_pivot_summary_{today}.xlsx', engine="openpyxl") as writer:
+        pivot_summary.to_excel(writer, sheet_name="pivot_summary", index=True)
+        ldms_discrep.to_excel(writer, sheet_name="ldms_discrep", index=True)
     
 
 
