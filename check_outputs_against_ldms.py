@@ -14,6 +14,19 @@ with open(yamlpath, 'r') as file:
     yamldict = yaml.safe_load(file)
 
 def main():
+    LDMS_ROWS_TO_IGNORE = [
+        {'guspec':'0410-0SYFJA00-001', 'drawdt':'2024-11-25'}, #ldms has two dates for this guspec; confirmed this one incorrect
+    ]
+    LDMS_CORE_ROWS_TO_IGNORE = [
+        {
+            ('guspec_core' if k == 'guspec' else k):
+            (v.rpartition('-')[0] if k == 'guspec' else v)
+            for k, v in rule.items()
+        }
+        for rule in LDMS_ROWS_TO_IGNORE
+    ]
+
+
     YAMLS_TO_IGNORE = [
         '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/LAB_ASSAY/paths.yaml',
     ]
@@ -168,6 +181,7 @@ def check_against_ldms_with_guspec_core(df):
     ldms = ldms.drop(columns=["drawdy", "drawdm", "drawdd"])
     ldms['guspec_core'] = ldms.guspec.str.rpartition("-")[0]
     ldms = ldms.loc[ldms.guspec_core.isin(df.guspec_core)]
+    ldms = exclude_rows(ldms, LDMS_CORE_ROWS_TO_IGNORE) #drop specific rows that we know to be incorrect
 
     ldms.protocol = ldms.protocol.astype(int)
     ldms.ptid = ldms.ptid.astype(int)
@@ -210,6 +224,7 @@ def check_against_ldms_with_guspec(df):
     )
     ldms = ldms.drop(columns=["drawdy", "drawdm", "drawdd"])
     ldms = ldms.loc[ldms.guspec.isin(df.guspec)]
+    ldms = exclude_rows(ldms, LDMS_ROWS_TO_IGNORE) #drop specific rows that we know to be incorrect
 
     ldms.protocol = ldms.protocol.astype(int)
     ldms.ptid = ldms.ptid.astype(int)
@@ -294,6 +309,17 @@ def get_output_path_from_yaml(yaml_dict: dict) -> list:
     if output_path[-1] != "/":
         output_path += "/"
     return [output_path + f for f in fnames]
+
+def exclude_rows(ldms, rules):
+    mask = pd.Series(False, index=ldms.index)
+
+    for rule in rules:
+        rule_mask = pd.Series(True, index=ldms.index)
+        for col, val in rule.items():
+            rule_mask &= ldms[col] == val
+        mask |= rule_mask
+
+    return ldms.loc[~mask]
 
 
 
