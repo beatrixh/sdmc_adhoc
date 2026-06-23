@@ -4,6 +4,7 @@ import sdmc_tools.access_ldms as access_ldms
 import datetime
 import os
 
+# LDMS CHECK ---------------------------------------------------------------------------------------------------- #
 # read in data
 input_data_path = '/trials/vaccine/p300/s001/qdata/LabData/EMPEM_passthrough/HVTN300B_v11 NSEM Data 04May26.xlsx'
 ptcls = pd.read_excel(input_data_path, sheet_name='Fab-bound_Ptcls')
@@ -50,3 +51,21 @@ assert len(ptcls.loc[(ptcls.ptid2!=ptcls.txtpid.astype(float)) & (ptcls.ptid2.no
 
 # all of them are visit 11
 ldms.vidval.unique()
+
+# COMPLETENESS CHECK ---------------------------------------------------------------------------------------------------- #
+pvisits = pd.read_excel(
+    "/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN300/assays/lab_temp_331688_2026-06-23_10-36-18.xlsx"
+)
+
+pvisits = pvisits[['PTID','Note 11','Part']]
+pvisits['in_data'] = pvisits.PTID.astype(int).isin(ldms.txtpid.astype(int))
+
+# note, for Part B ptids, we only expect visit 11. per tracker entry:
+    #EMPEM PT Report #2 (lab analysis): EMPEM will be performed by negative stain 
+    #microscopy polyclonal epitope mapping (nsEMPEM) on serum (SST) samples from Part B V11 [M12.5, 2 wk. post 5th vacc.]
+
+# Part B ptids NOT in data are all terminated
+assert len(pvisits.loc[(pvisits.Part=="B") & (pvisits.in_data==False) & (pvisits['Note 11']!="Terminated")]) == 0
+
+# all other part B ptids ARE in data
+assert len(pvisits.loc[(pvisits.in_data==True) & (pvisits.Part!="B")]) == 0
