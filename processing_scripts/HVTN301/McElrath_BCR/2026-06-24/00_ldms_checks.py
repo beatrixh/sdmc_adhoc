@@ -103,3 +103,27 @@ missings.to_csv(
     '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN301/assays/BCR_Sequencing/misc_files/data_processing/in_may_upload_not_in_june_upload.csv',
     index=False
 )
+
+
+# look at the missing samples
+problems = [777600479,821346268,726168211,764588462]
+problems = pvisits.loc[pvisits.PTID.isin(problems),['PTID','Note 10','Note 14']]
+
+problems.columns = ['PTID','10','14']
+
+problems = problems.melt(id_vars='PTID', var_name='Visit', value_name='Status')
+
+to_merge = df[['PTID','Visit']]
+to_merge.Visit = to_merge.Visit.astype(str)
+to_merge['in_data'] = True
+problems = problems.merge(to_merge.drop_duplicates(), on=['PTID','Visit'], how='left')
+problems=problems.fillna(False)
+
+# it looks like the only ones that mightve been in the data but werent are:
+
+# (764588462/14): sample 10 doesnt exist, shouldnt be included 
+# (777600479/14) sample 10 was "NA", maybe shouldnt be included? 
+# (821346268/14): sample 10 was out of window, maybe shouldnt be included?
+
+
+# for all the others the sample doesnt exist
