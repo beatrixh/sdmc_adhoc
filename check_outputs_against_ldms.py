@@ -13,23 +13,24 @@ yamlpath = '/home/bhaddock/repos/sdmc-adhoc/constants.yaml'
 with open(yamlpath, 'r') as file:
     yamldict = yaml.safe_load(file)
 
+LDMS_ROWS_TO_IGNORE = [
+    {'guspec':'0410-0SYFJA00-001', 'drawdt':'2024-11-25'}, #ldms has two dates for this guspec; confirmed this one incorrect
+]
+LDMS_CORE_ROWS_TO_IGNORE = [
+    {
+        ('guspec_core' if k == 'guspec' else k):
+        (v.rpartition('-')[0] if k == 'guspec' else v)
+        for k, v in rule.items()
+    }
+    for rule in LDMS_ROWS_TO_IGNORE
+]
+
+
+YAMLS_TO_IGNORE = [
+    '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/LAB_ASSAY/paths.yaml',
+]
 def main():
-    LDMS_ROWS_TO_IGNORE = [
-        {'guspec':'0410-0SYFJA00-001', 'drawdt':'2024-11-25'}, #ldms has two dates for this guspec; confirmed this one incorrect
-    ]
-    LDMS_CORE_ROWS_TO_IGNORE = [
-        {
-            ('guspec_core' if k == 'guspec' else k):
-            (v.rpartition('-')[0] if k == 'guspec' else v)
-            for k, v in rule.items()
-        }
-        for rule in LDMS_ROWS_TO_IGNORE
-    ]
 
-
-    YAMLS_TO_IGNORE = [
-        '/home/bhaddock/repos/sdmc-adhoc/processing_scripts/TEMPLATE/LAB_ASSAY/paths.yaml',
-    ]
     # this is everything since BH joined (jan 2024)
     endpoints = find_endpoints("/home/bhaddock/repos/sdmc-adhoc/processing_scripts", l=[])
     yams = [i for i in endpoints if i[-4:]=="yaml"]
@@ -131,8 +132,8 @@ def main():
 
     recipients = [
         'bhaddock@fredhutch.org',
-        'lbunts@fredhutch.org',
-        'sthiebau@fredhutch.org'
+        # 'lbunts@fredhutch.org',
+        # 'sthiebau@fredhutch.org'
     ]
 
     # if there's anything to report on, send email
