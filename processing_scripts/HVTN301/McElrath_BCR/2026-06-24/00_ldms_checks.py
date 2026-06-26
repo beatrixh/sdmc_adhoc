@@ -36,34 +36,39 @@ assert len(df_check.loc[(df_check.ptid_lab.astype(float)!=df_check.ptid_ldms.ast
 pvisits = pd.read_excel("/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN301/assays/lab_temp_44805_2026-05-19_11-27-35.xlsx")
 
 # ptids in the data but not pvisits
-in_data_not_pvisits = set(summary.reset_index().PTID.tolist()).difference(pvisits.loc[pvisits['Note 10']!='Not Applicable'].PTID)
+in_data_weird_in_pvisits = set(summary.reset_index().PTID.tolist()).difference(pvisits.loc[pvisits['Note 10']=='Complete'].PTID)
 
 # ptids in pvisits but not the data
 in_pvisits_not_data = set(pvisits.loc[pvisits['Note 10']!='Not Applicable'].PTID).difference(summary.reset_index().PTID)
 
 # print to see
 print(pvisits.loc[pvisits.PTID.isin(in_pvisits_not_data),['PTID','Visit 10','Note 10']])
-print(pvisits.loc[pvisits.PTID.isin(in_data_not_pvisits),['PTID','Visit 10','Note 10']])
+print(pvisits.loc[pvisits.PTID.isin(in_data_weird_in_pvisits),['PTID','Visit 10','Note 10']])
 
-ptid_discrepancies = pd.concat([
-    pd.DataFrame({
-        'ptid':list(in_data_not_pvisits),
-        'note':["in data; 'Not Applicable' in projected visits"]
-        }),
-    pd.DataFrame({
-        'ptid':list(in_pvisits_not_data),
-        'note':["in projected visits, not in data"]*len(in_pvisits_not_data)
-        }),
-    ])
+# no sample for these, so dont expect them in the data
+print(pvisits.loc[pvisits.PTID.isin(in_pvisits_not_data),['PTID','Visit 10','Note 10']])
+
+# looks like a bunch that were out of window were included, and one that was NaN was included.
+print(pvisits.loc[pvisits.PTID.isin(in_data_weird_in_pvisits),['PTID','Note 10','Note 14']])
+
+# these two ptids shouldve had a 14
+binary_summary = (summary > 0).astype(bool)
+print(binary_summary[binary_summary[10] & ~binary_summary[14]])
+
+questions = binary_summary[binary_summary[10] & ~binary_summary[14]].reset_index().PTID.tolist()
+
+discrep = pvisits.loc[pvisits.PTID.isin(questions),['PTID','Note 10','Note 14']].rename(columns={'Note 10':'Visit 10', 'Note 14':'Visit 14'})
+discrep = discrep.melt(id_vars='PTID', var_name='Visit', value_name='Projected Visits Status')
+
+discrep.loc[discrep.Visit=='Visit 10', 'In Data'] = True
+discrep.loc[discrep.Visit=='Visit 14', 'In Data'] = False
 
 savedir="/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN301/assays/BCR_Sequencing/misc_files/data_processing/"
 today = datetime.date.today().isoformat()
 
-binary_summary = (summary > 0).astype(bool)
 with pd.ExcelWriter(savedir+f'HVTN301_BCR_updated_sample_summary_{today}.xlsx', engine="openpyxl") as writer:
     binary_summary.to_excel(writer, sheet_name="summary", index=True)
-    ptid_discrepancies.to_excel(writer, sheet_name="ptid_discrepancies", index=False)
-
+    discrep.to_excel(writer, sheet_name="ptid_discrepancies", index=False)
 
 # how does this compare to the may upload?
 og = pd.read_csv(
