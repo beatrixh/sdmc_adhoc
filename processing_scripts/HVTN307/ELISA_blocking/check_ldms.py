@@ -12,7 +12,7 @@ import os
 import pdb
 import datetime
 
-INPUT_DATA_PATH = '/trials/vaccine/p307/s001/qdata/LabData/ELISA_blocking_pass-through/uploaded_by_lab/20260618-03/HVTN 307 Blocking Master File v4.xlsx'
+INPUT_DATA_PATH = '/trials/vaccine/p307/s001/qdata/LabData/ELISA_blocking_pass-through/uploaded_by_lab/20260626-02/HVTN 307 Blocking Master File v4.xlsx'
 
 
 # LDMS CHECK ---------------------------------------------------------------------------------------------------- #
@@ -24,10 +24,10 @@ ds = pd.read_excel(INPUT_DATA_PATH, skiprows=7)
 
 
 COLUMN_NAMING = {
-    'Subject ID':'ptid',
+    'PID':'ptid',
     'Visit':'visitno',
-    'Original ID':'guspec',
-    'Date Drawn':'drawdt'
+    'GLOBAL_ID':'guspec',
+    'Collection Date':'drawdt'
 }
 
 ds = ds.rename(columns=COLUMN_NAMING)
@@ -49,8 +49,8 @@ assert len(m.loc[(m.ptid!=m.txtpid) & (m.ptid.notna()),['ptid','txtpid']]) == 0
 m.vidval = m.vidval.astype(float)
 #strip the asterisks from visit numbers; the lab used these asterisks to denote reruns.
 m['visitno'] = m.apply(lambda row: int(str(row['visitno']).strip('*')), axis=1)
-# m['discrep_visitno'] = m.apply(lambda row: True if row['visitno']!=row['vidval'] else False, axis=1)
-# m[m['discrep_visitno']==True].to_csv('LDMS_visitno_discrepancies_2026-06-24.csv', index=False)
+m['discrep_visitno'] = m.apply(lambda row: True if row['visitno']!=row['vidval'] else False, axis=1)
+m[m['discrep_visitno']==True].to_csv('LDMS_visitno_discrepancies_2026-06-24.csv', index=False)
 assert len(m.loc[(m.visitno!=m.vidval) & (m.visitno.notna()),['visitno','vidval']]) == 0
 
 #m['drawdt_ldms'] = m.apply(lambda row: datetime.date(int(row['drawdy']), int(row['drawdm']), int(row['drawdd'])) if not pd.isnull(row['drawdy']) else '', axis=1)

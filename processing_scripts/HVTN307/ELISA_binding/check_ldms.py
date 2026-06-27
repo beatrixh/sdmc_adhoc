@@ -12,7 +12,7 @@ import os
 import pdb
 import datetime
 
-INPUT_DATA_PATH = '/trials/vaccine/p307/s001/qdata/LabData/ELISA_binding_pass-through/uploaded_by_lab/20260618-03/HVTN 307 Binding Master File v4.xlsx'
+INPUT_DATA_PATH = '/trials/vaccine/p307/s001/qdata/LabData/ELISA_binding_pass-through/uploaded_by_lab/20260626-02/HVTN 307 Binding Master File v4.xlsx'
 
 
 # LDMS CHECK ---------------------------------------------------------------------------------------------------- #
@@ -24,10 +24,10 @@ ds = pd.read_excel(INPUT_DATA_PATH, skiprows=7)
 
 
 COLUMN_NAMING = {
-    'Subject ID':'ptid',
+    'PTID':'ptid',
     'Visit':'visitno',
-    'Original ID':'guspec',
-    'Draw date':'drawdt'
+    'GLOBAL_ID':'guspec',
+    'Collection date':'drawdt'
 }
 
 ds = ds.rename(columns=COLUMN_NAMING)
