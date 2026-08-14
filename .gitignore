@@ -1,5 +1,8 @@
 # things that we don't want tracked (for whatever reason)
 deprecated_processing_scripts/
+*.csv
+*/data/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
