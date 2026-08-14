@@ -1,7 +1,7 @@
 # things that we don't want tracked (for whatever reason)
 deprecated_processing_scripts/
 *.csv
-*data/*
+*data*
 
 
 # Byte-compiled / optimized / DLL files
