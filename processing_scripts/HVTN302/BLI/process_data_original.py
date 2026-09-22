@@ -1,18 +1,26 @@
 ## ---------------------------------------------------------------------------##
-# Author: Beatrix Haddock
-# Date: 21 Sept 2026
-# Purpose: HVTN 302 BLI data from Tomaras lab (adding in antigen V3)
+# Author: Sara Thiebaud
+# Date: 18 March 2026
+# Purpose: HVTN 302 BLI data from Tomaras lab
 ## ---------------------------------------------------------------------------##
-import pandas as pd
+import pandas
 import numpy as np
 import os
-from datetime import date
+import datetime as datetime
+import pdb
 
 import sdmc_tools.process as sdmc_tools
 import sdmc_tools.access_ldms as access_ldms
 
+NETWORK = 'hvtn'
+PROTOCOL = 302
+
 WORKING_DIR = '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/BLI/misc_files/data_processing/'
 QDATA_FOLDER = '/trials/vaccine/p302/s001/qdata/LabData/BLI_pass-through'
+QDATA_FILES = [
+    'HVTN_302_BLI_GT_BG505_MD39.3_CD4KO4_pHLsecAvi_20260317.txt',
+    'HVTN_302_BLI_GT_BG505_MD39.3_pHLsecAvi_20260317.txt'
+]
 
 COLUMN_NAMING = {
     'analyte':'sample_description',
@@ -21,23 +29,20 @@ COLUMN_NAMING = {
     'experiment_type':'assay_name',
     'response':'result_quantitative',
     'response_unit':'result_units',
-    'response_units':'result_units',
     'response_standard_deviation':'result_stdev',
     'response_coefficient_of_variation':'result_cv',
     'kinetic_off_rate_standard_deviation':'kinetic_off_rate_stdev',
     'kinetic_off_rate_coefficient_of_variation':'kinetic_off_rate_cv',
     'kinetic_dissociation_area_under_curve':'kinetic_dissociation_auc',
     'kinetic_dissociation_area_under_curve_unit':'kinetic_dissociation_auc_units',
-    'kinetic_dissociation_area_under_curve_units':'kinetic_dissociation_auc_units',
     'kinetic_off_rate_unit':'kinetic_off_rate_units',
-    'kinetic_off_rate_units':'kinetic_off_rate_units',
     'positivity':'result_qualitative',
     'quantifiable':'result_quantifiable',
     'lower_limit_of_quantitation':'lloq',
-    'lower_limit_of_quantitation_units':'lloq_units',
     'dataset_creation_date':'dataset_creation_date_lab',
     'note':'lab_comments'
 }
+
 METADATA = {
     'specrole':'Sample',
     'assay_lab_name':'Tomaras Lab (Duke)',
@@ -79,10 +84,8 @@ OUTPUT_COLUMNS = [
     'kinetic_dissociation_auc',
     'kinetic_dissociation_auc_units',
     'positivity_threshold',
-    'positivity_threshold_units',
     'result_qualitative',
     'lloq',
-    'lloq_units',
     'kinetic_off_rate',
     'kinetic_off_rate_cv',
     'kinetic_off_rate_stdev',
@@ -98,65 +101,78 @@ OUTPUT_COLUMNS = [
     'sdmc_data_receipt_datetime',
 ]
 
-# read in data --------------------------------------------------------------##
-input_data_path = "/trials/vaccine/p302/s001/qdata/LabData/BLI_pass-through/HVTN_302_BLI_GT_BG505_MD39_V3_peptide_biotin_20260918.txt"
-df = pd.read_csv(input_data_path, sep="\t")
+ds = pandas.DataFrame()
+ldms = access_ldms.pull_one_protocol(NETWORK, PROTOCOL)
 
-# set(COLUMN_NAMING.keys()).difference(df.columns)
-# set(df.columns).difference(COLUMN_NAMING.keys())
-df = df.rename(columns=COLUMN_NAMING)
-df['guspec'] = df.sample_description.str.split(";", expand=True)[0]
+for f in QDATA_FILES:
 
+    fp = os.path.join(QDATA_FOLDER, f)
+    df = pandas.read_csv(fp, dtype=str, sep='\t')
 
-# standard processing -------------------------------------------------------##
-ldms = access_ldms.pull_one_protocol('hvtn', 302)
-dfp = sdmc_tools.standard_processing(
-    input_data=df,
-    input_data_path=input_data_path,
-    guspec_col='guspec',
-    network='hvtn',
-    metadata_dict=METADATA,
-    ldms=ldms,
-)
+    df = df.rename(columns=COLUMN_NAMING)
+    df['guspec'] = df.apply(lambda row: row['sample_description'].split(';')[0], axis=1)
+    dfp = sdmc_tools.standard_processing(
+        input_data=df,
+        input_data_path=fp,
+        guspec_col='guspec',
+        network='hvtn',
+        metadata_dict=METADATA,
+        ldms=ldms,
+    )
 
-# merge on original dataset -------------------------------------------------##
-prev = pd.read_csv(
-    '/networks/vtn/lab/SDMC_labscience/studies/HVTN/HVTN302/assays/BLI/misc_files/data_processing/archive/HVTN302_BLI_processed_2026-03-25.txt',
-    sep="\t"
-)
+    ds = pandas.concat([ds, dfp])
 
-# there's one row mislabelled as visit 12 instead of 13 from the lab
-assert(dfp.sample_identifier.astype(int)!=dfp.ptid.astype(int)).sum() == 0
-# assert(dfp.visit_identifier.astype(int)!=dfp.visitno.astype(int)).sum() == 0
-assert (dfp.sample_type != "SER").sum() == 0
+# assert (ds.ptid.astype(int)!=ds.sample_identifier.astype(int)).sum()==0
+# assert (ds.visitno.astype(float)!=ds.visit_identifier.astype(float)).sum()==0
 
-# dfp.loc[dfp.visit_identifier.astype(int)!=dfp.visitno.astype(int),['guspec','visit_identifier','visitno']]
-
-outputs = dfp.drop(
+outputs = ds.drop(
     columns=['sample_type', 'sample_identifier', 'visit_identifier', 'study']
 )
 
-# set(prev.columns).difference(outputs.columns)
-# set(outputs.columns).difference(prev.columns)
-# set(outputs.columns).symmetric_difference(OUTPUT_COLUMNS)
+# reorder = [
+#     'network',
+#     'protocol',
+#     'guspec',
+#     'specrole',
+#     'upload_lab_id',
+#     'assay_lab_name',
+#     'assay_name_haws',
+#     'ptid',
+#     'visitno',
+#     'drawdt',
+#     'spectype',
+#     'spec_primary',
+#     'spec_additive',
+#     'spec_derivative',
+#     'assay_name',
+#     'assay_subtype',
+#     'assay_precision',
+#     'lab_software',
+#     'instrument',
+#     'instrument_serialno',
+#     'result_qualitative',
+#     'result_quantitative',
+#     'result_detail',
+#     'result_units',
+#     'llod',
+#     'sdmc_processing_datetime',
+#     'sdmc_data_receipt_datetime',
+#     'input_file_name',
+# ]
 
-prev['lloq_units'] = "nm"
-prev['positivity_threshold_units'] = "nm"
+# set(reorder).symmetric_difference(outputs.columns)
 
-combined_outputs = pd.concat([prev, outputs])[OUTPUT_COLUMNS]
-combined_outputs.ptid = combined_outputs.ptid.astype(int)
-combined_outputs.visitno = combined_outputs.visitno.astype(int)
+# outputs = outputs[reorder]
 
 
-# save to .txt --------------------------------------------------------------##
-combined_outputs.to_csv(
-    WORKING_DIR + "HVTN302_BLI_processed_2026-09-21.txt",
-    sep="\t",
-    index=False
-)
+today = datetime.date.today().isoformat()
+outputs.to_csv(WORKING_DIR + f'HVTN302_BLI_processed_{today}.txt', sep='\t', index=False)
 
+# outputs[['result_qualitative','result_detail','result_units']].drop_duplicates()
+
+# outputs[[i for i in outputs.columns if 'result' in i]].drop_duplicates()
 summary = pandas.pivot_table(
-    combined_outputs,
+    outputs,
     index=['ptid','visitno'],
     columns='ligand',
     aggfunc='count',
@@ -164,6 +180,11 @@ summary = pandas.pivot_table(
     dropna=False
 ).dropna(how='all').fillna(0)
 
-summary.to_excel(
-    WORKING_DIR + "HVTN302_BLI_sample_summary_2026-09-21.xlsx"
-)
+# summary.to_excel(os.path.join(WORKING_DIR, f'HVTN302_BLI_summary_{today}.xlsx'))
+
+
+manifest = pandas.read_excel(os.path.join(WORKING_DIR, 'manifests', 'HVTN 302 v8 and v12 Serum Shipped to the Tomaras Lab as of 23Mar2026.xlsx'))
+
+manifest = manifest.rename(columns={'Original ID':'guspec'})
+m = pandas.merge(outputs, manifest, how='outer', on='guspec', indicator=True)
+# m.to_csv('manifest_comparison_' + today + '.csv', index=False)
