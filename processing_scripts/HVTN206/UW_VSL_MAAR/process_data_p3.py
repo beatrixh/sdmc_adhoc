@@ -195,7 +195,7 @@ new_summary = outputs.loc[outputs.result_qualitative!='Not Done'].pivot(
     values='result_qualitative'
 ).fillna("Not Done")
 new_summary.to_excel(
-    savedir + f"HVTN206_MAAR_lab_sept_upload_summary_2026-09-28.xlsx"
+    savedir + f"HVTN206_MAAR_lab_sept_results_summary_2026-09-28.xlsx"
 )
 
 summary_imputed = outputs.loc[outputs.result_qualitative!='Not Done'].pivot_table(
@@ -231,5 +231,5 @@ cumulative_summary = new_full.loc[new_full.result_qualitative!='Not Done'].pivot
     values='result_qualitative'
 ).fillna("Not Done")
 cumulative_summary.to_excel(
-    savedir + f"HVTN206_MAAR_Sept2026_cumulative_sample_summary_{today}.xlsx"
+    savedir + f"HVTN206_MAAR_Sept2026_cumulative_results_summary_{today}.xlsx"
 )
