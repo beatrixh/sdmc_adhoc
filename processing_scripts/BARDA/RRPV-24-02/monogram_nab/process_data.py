@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------------##
 # Author: Beatrix Haddock
-# Date: 2026-09-08
+# Date: 2026-10-05
 # Purpose: Process MOCK monogram nab data for BARDA. following sara's spec
 ## ---------------------------------------------------------------------------##
 
@@ -9,16 +9,21 @@ import numpy as np
 import os
 from datetime import date
 
+import re
+from datetime import datetime
+
 import sdmc_tools.process as sdmc_tools
 import sdmc_tools.access_ldms as access_ldms
 
-path = '/networks/vtn/lab/SDMC_labscience/assays/NAb/Monogram/example_data/RRPV-24-02_RETAIL_Monogram_YYYYMMDD_NAb_D614G_KP2.csv'
+path = '/networks/vtn/lab/SDMC_labscience/assays/NAb/Monogram/example_data/RRPV-24-02_RETAIL_Monogram_YYYYMMDD_NAb_D614G_KP2_updated.csv'
 df = pd.read_csv(path)
 
 ## TESTS ---------------------------------------------------------------------##
-def invalid_rows(df: pd.DataFrame, column: str, is_valid) -> pd.DataFrame:
+def invalid_rows(df: pd.DataFrame, column: str, is_valid, dropna) -> pd.DataFrame:
     """Return non-empty values in `column` that fail `is_valid`."""
-    values = df[column].fillna("").astype(str).str.strip()
+    values = df[column]
+    if dropna:
+        values = df[column].fillna("")
     mask = (values != "") & ~values.map(is_valid)
     return df.loc[mask, [column]]
 
@@ -32,9 +37,10 @@ def assert_no_invalid_values(
     column: str,
     is_valid,
     rule: str,
+    dropna = False,
 ) -> None:
     assert_column_exists(df, column)
-    bad = invalid_rows(df, column, is_valid)
+    bad = invalid_rows(df, column, is_valid, dropna)
     assert bad.empty, (
         f"{column} must {rule}. "
         f"Invalid rows: {bad.index.tolist()}; "
@@ -94,8 +100,6 @@ def test_collection_date_format(df):
     )
 test_collection_date_format(df)
 
-df.COLLECTION_DATE = ['10-Feb-2026', '10-Feb-2026', '12-Mar-2026', '12-Mar-2026', '12-Jun-2026', '12-Jun-2026'] ## didnt pass this one
-
 def test_collection_time_format(df):
     def is_valid_time(value: str) -> bool:
         try:
@@ -123,7 +127,7 @@ def test_pvc(df):
 test_pvc(df)
 
 def test_sars_cov_2_variant(df):
-    allowed = {"SARS-COV-2 D614G", "SARS-COV-2 KP.2"}
+    allowed = ["SARS-COV-2 D614G", "SARS-COV-2 KP2"]
 
     # Replace this with the exact column name in your dataframe if needed.
     column = "TEST_METHOD"
@@ -136,9 +140,15 @@ def test_sars_cov_2_variant(df):
     )
 test_sars_cov_2_variant(df)
 
-df = df.rename(columns={'TEST METHOD':'TEST_METHOD'})
+df.TEST_METHOD.unique()
 
-df.TEST_METHOD = ["SARS-COV-2 D614G", "SARS-COV-2 KP.2","SARS-COV-2 D614G", "SARS-COV-2 KP.2","SARS-COV-2 D614G", "SARS-COV-2 KP.2"] ## didnt pass this one
+# # STILL HAS LEADING SPACES
+# df.TEST_METHOD = df.TEST_METHOD.str.strip()
+# test_sars_cov_2_variant(df)
+
+# df = df.rename(columns={'TEST METHOD':'TEST_METHOD'})
+
+# df.TEST_METHOD = ["SARS-COV-2 D614G", "SARS-COV-2 KP.2","SARS-COV-2 D614G", "SARS-COV-2 KP.2","SARS-COV-2 D614G", "SARS-COV-2 KP.2"] ## didnt pass this one
 
 def test_titer_result(df):
     titer_result_allowable_values = ['<40', 'ZNG40', 'NRR']
@@ -175,6 +185,7 @@ def test_reason_not_done_or_comment_for_result(df):
         "Reason Not Done or Comment for Result",
         lambda value: value in reason_not_done_allowable_values,
         "be included in reason_not_done_allowable_values",
+        dropna=True
     )
 test_reason_not_done_or_comment_for_result(df)
 
@@ -187,11 +198,21 @@ def test_specimen_type(df):
     )
 test_specimen_type(df)
 
+df.TEST_METHOD.unique()
+
 ## STANDARD PROCESSING
 
-# merge limits on from DTP
+# merge limits on from DTP # this is the version we want to use
+# limits = pd.DataFrame({
+#     'TEST_METHOD':['SARS-COV-2 D614G','SARS-COV-2 KP2'],
+#     'lloq':[52, 48],
+#     'uloq':[93447, 28437]
+# })
+# df = df.merge(limits, on = 'TEST_METHOD')
+
+# merge limits on from DTP # version we are using with leading spaces
 limits = pd.DataFrame({
-    'TEST_METHOD':['SARS-COV-2 D614G','SARS-COV-2 KP.2'],
+    'TEST_METHOD':[' SARS-COV-2 D614G',' SARS-COV-2 KP2'],
     'lloq':[52, 48],
     'uloq':[93447, 28437]
 })
@@ -210,6 +231,7 @@ md = {
     'assay_precision':'Quantitative',
     'cutoff':50,
 }
+
 
 
 outputs = sdmc_tools.processing_minus_ldms(
@@ -271,13 +293,18 @@ reorder = [
 
 
 # make sure these match
-set(reorder).difference(outputs.columns)
-
-set(outputs.columns).difference(reorder)
+assert set(reorder).symmetric_difference(outputs.columns) == set()
 
 outputs = outputs[reorder]
 
-# save to .txt
+
+# save to .txt --------------------------------------------------------------------##
+
 today = date.today().isoformat()
-savepath = f"/networks/vtn/lab/SDMC_labscience/assays/NAb/Monogram/example_data/RRPV-24-02_RETAIL_Monogram_YYYYMMDD_NAb_D614G_KP2_processed_by_sdmc_{today}.txt"
-outputs.to_csv(savepath, index=False)
+fname = f"RRPV-24-02_RETAIL_Monogram_YYYYMMDD_NAb_D614G_KP2_updated_processed_by_sdmc_{today}.txt"
+
+savedir1 = f"/networks/vtn/lab/SDMC_labscience/assays/NAb/Monogram/example_data/"
+outputs.to_csv(savedir1 + fname, index=False)
+
+savedir2 = f"/networks/vtn/lab/SDMC_labscience/studies/BARDA/RRPV-24-02/assays/nAb/misc_files/data_processing/"
+outputs.to_csv(savedir2 + fname, index=False)
