@@ -9,6 +9,106 @@ import sdmc_tools.access_ldms as access_ldms
 path2 = '/networks/vtn/lab/SDMC_labscience/assays/Binding_Ab_via_MSD/PPD_ThermoFisher/example_data/RRPV-24-02_PPDVAC167_UBT_20260921_v1.csv'
 ubt = pd.read_csv(path2)
 
+
+## checks against DTA
+
+ubt.PROTOCOL.unique()
+
+# barcode length does not match length in 'data example' from DTA, but i wouldnt have necessarily expected this length to match
+ubt.BARCODE.unique()
+
+ubt.SUBJECT.unique()
+
+# subject should match site + 4-digit number
+assert np.all(ubt.SUBJECT.str[:3]==ubt.SITE.astype(str))
+
+# visit codes match DTA
+assert np.all(ubt.VISIT.isin(['V1D1', 'V2D31', 'V3D91', 'V4D181', 'V5D366', 'ET', 'Unscheduled [X]']))
+
+ubt.COLLECT_DATE.unique()
+
+# check datetime format
+parsed = pd.to_datetime(ubt.COLLECT_DATE, format="%Y-%m-%d", errors="coerce")
+assert parsed.notna().all()
+
+# check limits of quantitation
+
+limits_from_dta = pd.DataFrame({
+    'ANALYTE':[
+        'VAC167_ECL_SER_S',
+        'VAC167_ECL_SER_LB.1',
+        'VAC167_ECL_SER_N',
+        'VAC167_ECL_SER_BA.2.86',
+        'VAC167_ECL_SER_XBB.1.5v2',
+        'VAC167_ECL_SER_KP.3',
+        'VAC167_ECL_SER_JN.1v2',
+        'VAC167_ECL_SER_KP.2',
+        'VAC167_ECL_SER_B.1.617.2',
+        'VAC167_ECL_SER_BA.5',
+    ],
+    'LLOQ':[
+        420,
+        465,
+        725,
+        690,
+        875,
+        570,
+        665,
+        615,
+        740,
+        525,
+    ],
+    'Analytical ULOQ':[
+        692599,
+        290681,
+        1006443,
+        371214,
+        366762,
+        362655,
+        370831,
+        382728,
+        486991,
+        305169,
+    ],
+    'Dynamic ULOQ':[
+        63500000,
+        11250000,
+        44250000,
+        16800000,
+        21350000,
+        13800000,
+        16150000,
+        14900000,
+        45050000,
+        31750000,
+    ]
+})
+limits_check = ubt[['ANALYTE','LLOQ','Analytical ULOQ', 'Dynamic ULOQ']].drop_duplicates().merge(
+    limits_from_dta,
+    on='ANALYTE',
+    suffixes=('_data', '_dta')
+)
+assert len(limits_check) == len(limits_from_dta)
+assert (limits_check.LLOQ_data!=limits_check.LLOQ_dta).sum() == 0
+assert (limits_check['Analytical ULOQ_data']!=limits_check['Analytical ULOQ_dta']).sum() == 0
+assert (limits_check['Dynamic ULOQ_data']!=limits_check['Dynamic ULOQ_dta']).sum() == 0
+
+ubt.RESULT.unique()
+
+ubt.loc[(ubt.RESULT.notna()) & (ubt.RESULT.str.contains(">")), ['RESULT','LLOQ','Analytical ULOQ', 'Dynamic ULOQ']].drop_duplicates()
+
+ubt.loc[(ubt.RESULT.notna()) & (ubt.RESULT.str.contains("<")), ['RESULT','LLOQ','Analytical ULOQ', 'Dynamic ULOQ']].drop_duplicates()
+
+#The DTA does not say that 'nan' is a valid result value, but 'comments' says insufficient sample quantity so i have no questions
+ubt.loc[(ubt.RESULT.isna()),]
+
+ubt.RESULT_UNIT.unique()
+
+ubt.loc[ubt.RESULT_UNIT.isna()]
+
+ubt.COMMENTS.unique()
+
+
 col_rename = {
     'PROTOCOL': 'protocol',
     'MATRIX': 'spectype',
